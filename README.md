@@ -26,7 +26,7 @@
 
 **Link video:**
 
-**Chức năng bắt buộc:**
+## Chức năng bắt buộc:
 
 - Gửi và nhận tin nhắn qua TCP
 - Reply một tin nhắn cụ thể và hiển thị nội dung tin được reply
