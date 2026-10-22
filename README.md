@@ -70,14 +70,7 @@
 3. **Kết thúc:** client gửi `LOGOUT` hoặc server phát hiện ngắt kết nối, giải phóng socket và cập nhật danh sách online
 
 ### Các loại message chính
-| type | Hướng | Mô tả |
-| `LOGIN` / `LOGIN_OK` | C↔S | Đăng nhập, kèm avatar |
-| `USER_LIST` | S→C | Danh sách người dùng và avatar |
-| `MESSAGE` | C↔S | Tin nhắn (có `msgId`, `replyTo`, nội dung UTF-8/emoji) |
-| `FORWARD` | C→S | Chuyển tiếp tin nhắn |
-| `ACK` | S→C | Xác nhận đã nhận/đã gửi |
-| `ERROR` | S→C | Mã lỗi và mô tả khi dữ liệu không hợp lệ |
-| `PING` / `PONG` | hai chiều | Duy trì và kiểm tra kết nối |
+
 
 (Đặc tả chi tiết từng trường và mã lỗi: xem `DOCX/` hoặc `Extra/protocol.md`.)
 
