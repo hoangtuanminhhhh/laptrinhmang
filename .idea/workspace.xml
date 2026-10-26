@@ -4,24 +4,121 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="cf7f9b44-2060-4b5a-b55b-0371b9b1026e" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/laptrinhmang/Code/.gitkeep" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/laptrinhmang/Code/client/pom.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/laptrinhmang/Code/server/src/main/java/.gitkeep" beforeDir="false" />
+    <list default="true" id="cf7f9b44-2060-4b5a-b55b-0371b9b1026e" name="Changes" comment="xóa file trùng">
+      <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
+  <component name="CopilotPersistence">
+    <persistenceIdMap>
+      <entry key="_C:/laptrinhmang" value="3LEm43cbg3HVkilCkHEsgduJmTs" />
+    </persistenceIdMap>
+  </component>
+  <component name="EmbeddingIndexingInfo">
+    <option name="cachedIndexableFilesCount" value="17" />
+  </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;itsthienphuc&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/hoangtuanminhhhh/laptrinhmang.git&quot;,
+    &quot;accountId&quot;: &quot;a30748f6-4479-4491-9dd6-95de555df00e&quot;
+  }
+}</component>
+  <component name="McpProjectServerCommands">
+    <commands />
+    <urls />
+  </component>
+  <component name="NextEditCompletionFeaturesState">
+    <decayedCancelled>
+      <entry key="MS100" value="1.0833456884114514" />
+      <entry key="MS500" value="2.108564471460722" />
+      <entry key="S2" value="3.820851557901212" />
+      <entry key="S5" value="5.174642402884442" />
+      <entry key="S10" value="5.946771281398886" />
+      <entry key="S30" value="6.6109837711330295" />
+      <entry key="S60" value="6.800252202877964" />
+      <entry key="M2" value="6.8987755000510305" />
+      <entry key="M5" value="6.959180695248489" />
+      <entry key="M10" value="6.9795349769076696" />
+      <entry key="M15" value="6.986344312857098" />
+      <entry key="M30" value="6.993165978745569" />
+      <entry key="H1" value="6.996581443360706" />
+      <entry key="H2" value="6.998290334978228" />
+      <entry key="H4" value="6.999145070788683" />
+      <entry key="D1" value="6.999857498365386" />
+      <entry key="W1" value="6.999979642294635" />
+    </decayedCancelled>
+    <decayedSelected>
+      <entry key="MS100" value="0.0" />
+      <entry key="MS500" value="0.0" />
+      <entry key="S2" value="0.0" />
+      <entry key="S5" value="0.0" />
+      <entry key="S10" value="0.0" />
+      <entry key="S30" value="0.0" />
+      <entry key="S60" value="0.0" />
+      <entry key="M2" value="0.0" />
+      <entry key="M5" value="0.0" />
+      <entry key="M10" value="0.0" />
+      <entry key="M15" value="0.0" />
+      <entry key="M30" value="0.0" />
+      <entry key="H1" value="0.0" />
+      <entry key="H2" value="0.0" />
+      <entry key="H4" value="0.0" />
+      <entry key="D1" value="0.0" />
+      <entry key="W1" value="0.0" />
+    </decayedSelected>
+    <decayedShown>
+      <entry key="MS100" value="0.9998944009255409" />
+      <entry key="MS500" value="2.060650550887658" />
+      <entry key="S2" value="3.7945335399290703" />
+      <entry key="S5" value="5.154999864565466" />
+      <entry key="S10" value="5.933680623822811" />
+      <entry key="S30" value="6.605589933796599" />
+      <entry key="S60" value="6.797401845749776" />
+      <entry key="M2" value="6.897309851842203" />
+      <entry key="M5" value="6.9585844410162805" />
+      <entry key="M10" value="6.97923515992298" />
+      <entry key="M15" value="6.986144057540902" />
+      <entry key="M30" value="6.993065661972413" />
+      <entry key="H1" value="6.996531237610466" />
+      <entry key="H2" value="6.998265220251565" />
+      <entry key="H4" value="6.999132510461136" />
+      <entry key="D1" value="6.9998554045656505" />
+      <entry key="W1" value="6.999979343170301" />
+    </decayedShown>
   </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 2,
   &quot;fromUser&quot;: false
 }</component>
   <component name="ProjectId" id="3LBoX2Fwwg9MgfK24tRCoBJMab7" />
+  <component name="ProjectSessionTemplates">
+    <option name="panelTemplate">
+      <template>
+        <option name="modeId" value="Agent" />
+        <option name="model">
+          <model>
+            <option name="modelType" value="builtin_id" />
+            <option name="modelValue" value="auto" />
+          </model>
+        </option>
+        <option name="targetType" value="BACKGROUND" />
+        <option name="worktreeMode" value="WORKSPACE" />
+      </template>
+    </option>
+  </component>
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
@@ -29,17 +126,24 @@
   <component name="PropertiesComponent">{
   &quot;keyToString&quot;: {
     &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.MCP Project settings loaded&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
     &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
     &quot;com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1&quot;: &quot;true&quot;,
+    &quot;copilot.chat.legacySessionMetadata.migrated&quot;: &quot;true&quot;,
     &quot;git-widget-placeholder&quot;: &quot;main&quot;,
     &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
     &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
     &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
     &quot;last_opened_file_path&quot;: &quot;D:/laptrinhmang&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
     &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;python.packages.toolwindow.project.migrated.to.right.top.v2&quot;: &quot;true&quot;,
     &quot;to.speed.mode.migration.done&quot;: &quot;true&quot;
   }
 }</component>
@@ -47,7 +151,6 @@
     <attachedChunks>
       <set>
         <option value="bundled-jdk-30f59d01ecdd-a203e0a19954-intellij.indexing.shared.core-IU-262.10968.63" />
-        <option value="bundled-js-predefined-d6986cc7102b-4abd2a77f808-JavaScript-IU-262.10968.63" />
       </set>
     </attachedChunks>
   </component>
@@ -58,10 +161,34 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1792936857727</updated>
+      <workItem from="1793027395294" duration="396000" />
+      <workItem from="1793027842916" duration="86000" />
+      <workItem from="1793027946984" duration="292000" />
     </task>
+    <task id="LOCAL-00001" summary="xóa file trùng">
+      <option name="closed" value="true" />
+      <created>1793027586221</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1793027586231</updated>
+    </task>
+    <task id="LOCAL-00002" summary="xóa file trùng">
+      <option name="closed" value="true" />
+      <created>1793027600099</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1793027600099</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="xóa file trùng" />
+    <option name="LAST_COMMIT_MESSAGE" value="xóa file trùng" />
   </component>
 </project>
