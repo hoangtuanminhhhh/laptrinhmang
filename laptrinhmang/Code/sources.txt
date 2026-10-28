@@ -1,0 +1,11 @@
+E:\PhatVo\Study\LapTrinhMang\laptrinhmang\laptrinhmang\Code\src\main\java\com\chat\client\component\AvatarView.java
+E:\PhatVo\Study\LapTrinhMang\laptrinhmang\laptrinhmang\Code\src\main\java\com\chat\client\component\EmojiPickerPopup.java
+E:\PhatVo\Study\LapTrinhMang\laptrinhmang\laptrinhmang\Code\src\main\java\com\chat\common\config\NetworkConfig.java
+E:\PhatVo\Study\LapTrinhMang\laptrinhmang\laptrinhmang\Code\src\main\java\com\chat\common\model\Message.java
+E:\PhatVo\Study\LapTrinhMang\laptrinhmang\laptrinhmang\Code\src\main\java\com\chat\common\model\User.java
+E:\PhatVo\Study\LapTrinhMang\laptrinhmang\laptrinhmang\Code\src\main\java\com\chat\server\db\DatabaseManager.java
+E:\PhatVo\Study\LapTrinhMang\laptrinhmang\laptrinhmang\Code\src\main\java\com\chat\server\db\UserRepository.java
+E:\PhatVo\Study\LapTrinhMang\laptrinhmang\laptrinhmang\Code\src\main\java\com\chat\server\service\AuthService.java
+E:\PhatVo\Study\LapTrinhMang\laptrinhmang\laptrinhmang\Code\src\test\java\com\chat\test\AvatarEmojiDemoApp.java
+E:\PhatVo\Study\LapTrinhMang\laptrinhmang\laptrinhmang\Code\src\test\java\com\chat\test\AvatarEmojiDemoLauncher.java
+E:\PhatVo\Study\LapTrinhMang\laptrinhmang\laptrinhmang\Code\src\test\java\com\chat\test\DatabaseTest.java
