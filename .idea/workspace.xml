@@ -4,7 +4,15 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="cf7f9b44-2060-4b5a-b55b-0371b9b1026e" name="Changes" comment="cập nhật lại cấu trúc dự án">
+    <list default="true" id="cf7f9b44-2060-4b5a-b55b-0371b9b1026e" name="Changes" comment="xóa file trùng">
+      <change afterPath="$PROJECT_DIR$/laptrinhmang/Code/src/main/java/com/chat/client/TestClient.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/laptrinhmang/Code/src/main/java/com/chat/common/protocol/Packet.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/laptrinhmang/Code/src/main/java/com/chat/common/protocol/PacketFramer.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/laptrinhmang/Code/src/main/java/com/chat/common/protocol/PacketType.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/laptrinhmang/Code/src/main/java/com/chat/server/ServerApp.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/laptrinhmang/Code/src/main/java/com/chat/server/core/ChatServer.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/laptrinhmang/Code/src/main/java/com/chat/server/core/ClientHandler.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -18,14 +26,17 @@
     </persistenceIdMap>
   </component>
   <component name="EmbeddingIndexingInfo">
-    <option name="cachedIndexableFilesCount" value="26" />
+    <option name="cachedIndexableFilesCount" value="17" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Enum" />
+        <option value="Class" />
+      </list>
+    </option>
   </component>
   <component name="Git.Settings">
-    <option name="RECENT_BRANCH_BY_REPOSITORY">
-      <map>
-        <entry key="$PROJECT_DIR$" value="main" />
-      </map>
-    </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="GitHubPullRequestSearchHistory">{
@@ -34,35 +45,35 @@
     &quot;assignee&quot;: &quot;itsthienphuc&quot;
   }
 }</component>
-  <component name="GithubPullRequestsUISettings">{
-  &quot;selectedUrlAndAccountId&quot;: {
-    &quot;url&quot;: &quot;https://github.com/hoangtuanminhhhh/laptrinhmang.git&quot;,
-    &quot;accountId&quot;: &quot;a30748f6-4479-4491-9dd6-95de555df00e&quot;
+  <component name="GithubPullRequestsUISettings"><![CDATA[{
+  "selectedUrlAndAccountId": {
+    "url": "https://github.com/hoangtuanminhhhh/laptrinhmang",
+    "accountId": "2aede790-6de3-4573-8690-8d40c60152e0"
   }
-}</component>
+}]]></component>
   <component name="McpProjectServerCommands">
     <commands />
     <urls />
   </component>
   <component name="NextEditCompletionFeaturesState">
     <decayedCancelled>
-      <entry key="MS100" value="1.0038042933758804" />
-      <entry key="MS500" value="1.8362719222456894" />
-      <entry key="S2" value="4.448883200551551" />
-      <entry key="S5" value="6.395258012731858" />
-      <entry key="S10" value="7.492341551094674" />
-      <entry key="S30" value="8.440943592935515" />
-      <entry key="S60" value="8.71258321107301" />
-      <entry key="M2" value="8.854251081149336" />
-      <entry key="M5" value="8.941201659202914" />
-      <entry key="M10" value="8.970516934120592" />
-      <entry key="M15" value="8.980325922063505" />
-      <entry key="M30" value="8.990153596334796" />
-      <entry key="H1" value="8.995074454297395" />
-      <entry key="H2" value="8.99753664084386" />
-      <entry key="H4" value="8.99876817380353" />
-      <entry key="D1" value="8.999794675266674" />
-      <entry key="W1" value="8.999970667396404" />
+      <entry key="MS100" value="1.0833456884114514" />
+      <entry key="MS500" value="2.108564471460722" />
+      <entry key="S2" value="3.820851557901212" />
+      <entry key="S5" value="5.174642402884442" />
+      <entry key="S10" value="5.946771281398886" />
+      <entry key="S30" value="6.6109837711330295" />
+      <entry key="S60" value="6.800252202877964" />
+      <entry key="M2" value="6.8987755000510305" />
+      <entry key="M5" value="6.959180695248489" />
+      <entry key="M10" value="6.9795349769076696" />
+      <entry key="M15" value="6.986344312857098" />
+      <entry key="M30" value="6.993165978745569" />
+      <entry key="H1" value="6.996581443360706" />
+      <entry key="H2" value="6.998290334978228" />
+      <entry key="H4" value="6.999145070788683" />
+      <entry key="D1" value="6.999857498365386" />
+      <entry key="W1" value="6.999979642294635" />
     </decayedCancelled>
     <decayedSelected>
       <entry key="MS100" value="0.0" />
@@ -84,23 +95,23 @@
       <entry key="W1" value="0.0" />
     </decayedSelected>
     <decayedShown>
-      <entry key="MS100" value="0.9221817096419442" />
-      <entry key="MS500" value="1.7518535601257157" />
-      <entry key="S2" value="4.389623675311164" />
-      <entry key="S5" value="6.358805321129062" />
-      <entry key="S10" value="7.46986674799017" />
-      <entry key="S30" value="8.432115955576279" />
-      <entry key="S60" value="8.707969565065321" />
-      <entry key="M2" value="8.851891444730855" />
-      <entry key="M5" value="8.940244745112786" />
-      <entry key="M10" value="8.970036267653686" />
-      <entry key="M15" value="8.98000498430795" />
-      <entry key="M30" value="8.989992880116606" />
-      <entry key="H1" value="8.994994034237" />
-      <entry key="H2" value="8.99749641531129" />
-      <entry key="H4" value="8.998748057159833" />
-      <entry key="D1" value="8.99979132195404" />
-      <entry key="W1" value="8.999970188338548" />
+      <entry key="MS100" value="0.9998944009255409" />
+      <entry key="MS500" value="2.060650550887658" />
+      <entry key="S2" value="3.7945335399290703" />
+      <entry key="S5" value="5.154999864565466" />
+      <entry key="S10" value="5.933680623822811" />
+      <entry key="S30" value="6.605589933796599" />
+      <entry key="S60" value="6.797401845749776" />
+      <entry key="M2" value="6.897309851842203" />
+      <entry key="M5" value="6.9585844410162805" />
+      <entry key="M10" value="6.97923515992298" />
+      <entry key="M15" value="6.986144057540902" />
+      <entry key="M30" value="6.993065661972413" />
+      <entry key="H1" value="6.996531237610466" />
+      <entry key="H2" value="6.998265220251565" />
+      <entry key="H4" value="6.999132510461136" />
+      <entry key="D1" value="6.9998554045656505" />
+      <entry key="W1" value="6.999979343170301" />
     </decayedShown>
   </component>
   <component name="ProjectColorInfo">{
@@ -108,6 +119,9 @@
   &quot;fromUser&quot;: false
 }</component>
   <component name="ProjectId" id="3LBoX2Fwwg9MgfK24tRCoBJMab7" />
+  <component name="ProjectLevelVcsManager">
+    <ConfirmationsSetting value="2" id="Add" />
+  </component>
   <component name="ProjectSessionTemplates">
     <option name="panelTemplate">
       <template>
@@ -127,39 +141,39 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;Application.AvatarEmojiDemoApp.executor&quot;: &quot;Run&quot;,
-    &quot;Application.AvatarEmojiDemoLauncher.executor&quot;: &quot;Run&quot;,
-    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.MCP Project settings loaded&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
-    &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
-    &quot;com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1&quot;: &quot;true&quot;,
-    &quot;copilot.chat.legacySessionMetadata.migrated&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;TP2&quot;,
-    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
-    &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
-    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;D:/laptrinhmang&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;python.packages.toolwindow.project.migrated.to.right.top.v2&quot;: &quot;true&quot;,
-    &quot;to.speed.mode.migration.done&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Application.ServerApp.executor": "Run",
+    "Application.TestClient.executor": "Run",
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.MCP Project settings loaded": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "codeWithMe.voiceChat.enabledByDefault": "false",
+    "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
+    "copilot.chat.legacySessionMetadata.migrated": "true",
+    "git-widget-placeholder": "main",
+    "ignore.virus.scanning.warn.message": "true",
+    "junie.onboarding.icon.badge.shown": "true",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "D:/laptrinhmang",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "python.packages.toolwindow.project.migrated.to.right.top.v2": "true",
+    "to.speed.mode.migration.done": "true"
   }
-}</component>
-  <component name="RunManager" selected="Application.AvatarEmojiDemoLauncher">
-    <configuration name="AvatarEmojiDemoApp" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="com.chat.test.AvatarEmojiDemoApp" />
+}]]></component>
+  <component name="RunManager" selected="Application.TestClient">
+    <configuration name="ServerApp" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="com.chat.server.ServerApp" />
       <module name="tcp-chat" />
       <extension name="coverage">
         <pattern>
-          <option name="PATTERN" value="com.chat.test.*" />
+          <option name="PATTERN" value="com.chat.server.*" />
           <option name="ENABLED" value="true" />
         </pattern>
       </extension>
@@ -167,12 +181,12 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
-    <configuration name="AvatarEmojiDemoLauncher" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="com.chat.test.AvatarEmojiDemoLauncher" />
+    <configuration name="TestClient" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="com.chat.client.TestClient" />
       <module name="tcp-chat" />
       <extension name="coverage">
         <pattern>
-          <option name="PATTERN" value="com.chat.test.*" />
+          <option name="PATTERN" value="com.chat.client.*" />
           <option name="ENABLED" value="true" />
         </pattern>
       </extension>
@@ -182,15 +196,16 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Application.AvatarEmojiDemoLauncher" />
-        <item itemvalue="Application.AvatarEmojiDemoApp" />
+        <item itemvalue="Application.TestClient" />
+        <item itemvalue="Application.ServerApp" />
       </list>
     </recent_temporary>
   </component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-jdk-30f59d01ecdd-a203e0a19954-intellij.indexing.shared.core-IU-262.10968.63" />
+        <option value="bundled-jdk-30f59d01ecdd-37e91769500f-intellij.indexing.shared.core-IU-261.25134.95" />
+        <option value="bundled-js-predefined-d6986cc7102b-31caf2ab9e3c-JavaScript-IU-261.25134.95" />
       </set>
     </attachedChunks>
   </component>
@@ -203,10 +218,7 @@
       <updated>1792936857727</updated>
       <workItem from="1793027395294" duration="396000" />
       <workItem from="1793027842916" duration="86000" />
-      <workItem from="1793027946984" duration="414000" />
-      <workItem from="1793040938348" duration="427000" />
-      <workItem from="1793080861287" duration="3121000" />
-      <workItem from="1793119620440" duration="312000" />
+      <workItem from="1793027946984" duration="292000" />
     </task>
     <task id="LOCAL-00001" summary="xóa file trùng">
       <option name="closed" value="true" />
@@ -224,15 +236,7 @@
       <option name="project" value="LOCAL" />
       <updated>1793027600099</updated>
     </task>
-    <task id="LOCAL-00003" summary="cập nhật lại cấu trúc dự án">
-      <option name="closed" value="true" />
-      <created>1793028275267</created>
-      <option name="number" value="00003" />
-      <option name="presentableId" value="LOCAL-00003" />
-      <option name="project" value="LOCAL" />
-      <updated>1793028275267</updated>
-    </task>
-    <option name="localTasksCounter" value="4" />
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -240,7 +244,6 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="xóa file trùng" />
-    <MESSAGE value="cập nhật lại cấu trúc dự án" />
-    <option name="LAST_COMMIT_MESSAGE" value="cập nhật lại cấu trúc dự án" />
+    <option name="LAST_COMMIT_MESSAGE" value="xóa file trùng" />
   </component>
 </project>
