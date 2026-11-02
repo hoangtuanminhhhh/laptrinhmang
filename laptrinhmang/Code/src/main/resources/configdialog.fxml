@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox alignment="CENTER" spacing="10.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.chat.client.ConfigDialogController">
+    <padding>
+        <Insets bottom="20.0" left="20.0" right="20.0" top="20.0"/>
+    </padding>
+
+    <Label style="-fx-font-size: 16px; -fx-font-weight: bold;" text="Kết nối đến Server Chat"/>
+    
+    <TextField fx:id="ipField" promptText="Nhập IP Server (vd: 127.0.0.1)" text="127.0.0.1"/>
+    <TextField fx:id="portField" promptText="Nhập Port (vd: 8888)" text="8888"/>
+    <TextField fx:id="usernameField" promptText="Nhập tên hiển thị của bạn"/>
+
+    <Button fx:id="connectButton" defaultButton="true" text="Kết nối" style="-fx-background-color: #4CAF50; -fx-text-fill: white;"/>
+</VBox>
