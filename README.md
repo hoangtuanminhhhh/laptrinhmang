@@ -5,8 +5,9 @@
 - **Mã đề tài:** UDM_08
 - **Tên đề tài:** Chat TCP Client–Server
 - **Môn học:** Lập trình mạng
-- **Giảng viên hướng dẫn:** Mai Ngọc Châu
-- **Mã nhóm:** NET_262701302_11
+- **Giảng viên hướng dẫn:** ThS. Mai Ngọc Châu
+- **Mã lớp học phần:** NET_262701302_11
+- **Nhóm thực hiện:** Nhóm 11
 
 ---
 
@@ -15,11 +16,11 @@
 - **Ngôn ngữ:** Java 21 (LTS)
 - **Mạng:** Java Socket (TCP thuần, I/O Streams đa luồng)
 - **Giao diện (GUI):** JavaFX 21.0.2 (FXML, Scene Builder, CSS Styling)
-- **Định dạng dữ liệu:** Jackson Databind 2.17.0 (POJO <-> JSON UTF-8)
+- **Định dạng dữ liệu:** Jackson Databind 2.17.0 / Gson 2.10.1 (POJO <-> JSON UTF-8)
 - **Cơ sở dữ liệu:** SQLite JDBC 3.45.2.0 (`chat.db`)
-- **Bảo mật:** jBCrypt 0.4 (Mã hóa băm mật khẩu người dùng)
-- **Nhật ký (Logging):** SLF4J 2.0.12 + Logback Classic 1.5.3
-- **Kiểm thử tự động:** JUnit Jupiter 5.10.2 (JUnit 5)
+- **Bảo mật:** jBCrypt 0.4 / at.favre.lib:bcrypt 0.10.2 (Mã hóa băm mật khẩu người dùng)
+- **Nhật ký (Logging):** SLF4J + Logback Classic
+- **Kiểm thử tự động:** JUnit Jupiter 5 & Custom Standalone Test Runners
 - **Quản lý dự án & Build:** Apache Maven 3.9+
 - **Quản lý mã nguồn:** Git & GitHub
 
@@ -30,7 +31,7 @@
 - **JDK:** Java Development Kit 21 trở lên (khuyến nghị Eclipse Temurin 21 hoặc Oracle OpenJDK 21)
 - **Maven:** Apache Maven 3.9.0 trở lên
 - **Hệ điều hành đã thử nghiệm:** Windows 10/11 (64-bit), macOS (Apple Silicon / Intel), Ubuntu 22.04 LTS
-- **Scene Builder (Tùy chọn):** Khuyến nghị cài đặt để chỉnh sửa các file FXML trực quan
+- **Scene Builder (Tùy chọn):** Khuyến nghị cài đặt để xem và chỉnh sửa giao diện FXML trực quan
 
 ---
 
@@ -60,7 +61,7 @@
 
 ---
 
-## 5. Thành viên nhóm
+## 5. Bảng phân công thành viên nhóm
 
 | STT | Họ và tên      |  MSSV  | Vai trò / Phụ trách chính                         | Nhiệm vụ chi tiết (Tuần 1 & 2)                                                                                      |
 | :-: | :------------- | :----: | :------------------------------------------------ | :------------------------------------------------------------------------------------------------------------------ |
@@ -207,15 +208,21 @@ mvn test-compile exec:java -Dexec.mainClass="com.chat.test.AvatarEmojiDemoLaunch
 
 ## 9. Hướng dẫn Kiểm thử (Testing)
 
-Dự án tích hợp bộ kiểm thử tự động với **JUnit 5**:
-Chạy toàn bộ các ca Unit Test:
+Dự án tích hợp bộ kiểm thử cho từng tầng:
+
+### Kiểm thử CSDL & Xác thực tài khoản:
 
 ```bash
-cd laptrinhmang/Code
-mvn test
+java -cp "target/classes;target/test-classes" com.chat.test.DatabaseTest
 ```
 
-Chạy riêng kiểm thử tầng Framing chống dính/xé gói (`PacketFramerTest`):
+### Kiểm thử Giao thức Đóng/Mở gói chống dính và xé gói (`PacketFramerTest`):
+
+```bash
+java -cp "target/classes;target/test-classes" com.chat.test.PacketFramerTest
+```
+
+Hoặc khi cấu hình JUnit trên IDE / Maven:
 
 ```bash
 mvn test -Dtest=PacketFramerTest
@@ -246,7 +253,7 @@ _(Chi tiết danh mục test cases kiểm thử tích hợp xem tại [docs/TEST
 │   │       │   │   ├── common/         # Protocol, config, model dùng chung
 │   │       │   │   └── server/         # Server socket core, thread pool, db
 │   │       │   └── resources/          # FXML, CSS, icons, properties
-│   │       └── test/java/com/chat/test/ # Unit tests & Demo launchers
+│   │       └── test/java/com/chat/test/ # Standalone Unit tests & Demo launchers
 │   ├── DOCX/                           # Báo cáo đồ án (.docx)
 │   ├── Extra/                          # Ảnh demo, bằng chứng test, sơ đồ
 │   └── PPTX/                           # Slide thuyết trình báo cáo (.pptx)

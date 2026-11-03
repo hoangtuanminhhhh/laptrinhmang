@@ -1,15 +1,24 @@
 # =============================================================================
-# Code Module .gitignore — UDM_08 TCP Chat
+# Code Maven Subproject .gitignore — UDM_08 TCP Chat
 # =============================================================================
 
 target/
 **/target/
-!**/src/main/**/target/
-!**/src/test/**/target/
 build/
 **/build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+!**/src/main/**/target/
+!**/src/test/**/target/
+!.mvn/wrapper/maven-wrapper.jar
+.kotlin
 
-# Database files & Runtime data
+# Logs
+*.log
+logs/
+**/logs/
+
+# SQLite Database dynamic files
 *.db
 *.db-journal
 *.sqlite
@@ -17,26 +26,35 @@ build/
 data/
 **/data/
 
-# Logs
-*.log
-logs/
-**/logs/
-
-# IDE files
+### IntelliJ IDEA ###
 .idea/
 *.iws
 *.iml
 *.ipr
-.vscode/
-.classpath
-.project
-.settings/
+out/
+
+### Eclipse ###
 .apt_generated
 .factorypath
+.project
+.settings/
+.springBeans
+.sts4-cache
 
-# OS & Temp
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+### VS Code ###
+.vscode/
+
+### Operating System ###
 .DS_Store
 Thumbs.db
 ehthumbs.db
-*.tmp
-*.bak
+Desktop.ini
+hs_err_pid*
+replay_pid*

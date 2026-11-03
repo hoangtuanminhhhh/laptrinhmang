@@ -1,8 +1,8 @@
 # =============================================================================
-# Root .gitignore — UDM_08 TCP Chat Client-Server
+# Root .gitignore — UDM_08 TCP Chat Client-Server (Java 21 / JavaFX)
 # =============================================================================
 
-# Compiled class files
+# Compiled class files & Maven build outputs
 *.class
 target/
 **/target/
@@ -25,7 +25,7 @@ logs/
 hs_err_pid*
 replay_pid*
 
-# SQLite Database & Storage
+# SQLite Database dynamic files & storage
 *.db
 *.db-journal
 *.sqlite
@@ -33,22 +33,23 @@ replay_pid*
 data/
 **/data/
 
-# IntelliJ IDEA
+# IntelliJ IDEA & JetBrains IDEs
 .idea/
 *.iml
 *.iws
 *.ipr
 out/
 
-# Eclipse
+# Eclipse IDE
 .apt_generated
 .classpath
 .factorypath
 .project
 .settings/
 .springBeans
+.sts4-cache
 
-# NetBeans
+# NetBeans IDE
 /nbproject/private/
 /nbbuild/
 /dist/

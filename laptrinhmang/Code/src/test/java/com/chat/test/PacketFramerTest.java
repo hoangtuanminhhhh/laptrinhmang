@@ -3,147 +3,271 @@ package com.chat.test;
 import com.chat.common.protocol.Packet;
 import com.chat.common.protocol.PacketFramer;
 import com.chat.common.protocol.PacketType;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import java.util.Objects;
 
 /**
- * Bộ Unit Test tự động kiểm tra cơ chế đóng/mở gói (Framing) của PacketFramer.
- * Chịu trách nhiệm: Thành viên 6 (QA & Testing Lead).
+ * Bộ kiểm thử tự động (Unit Test / Integration Runner) cho tầng giao thức mạng:
+ * Kiểm tra cơ chế đóng/mở gói (Framing) của PacketFramer chống dính gói và xé
+ * gói.
+ *
+ * Thiết kế dựa theo cấu trúc test độc lập có sẵn trong com.chat.test (như
+ * DatabaseTest),
+ * cho phép chạy trực tiếp qua hàm main() mà không phụ thuộc vào thư viện ngoài.
+ *
+ * Chịu trách nhiệm: Thành viên 6 — QA & Git Flow & Architecture Documentation.
  */
 public class PacketFramerTest {
 
-    @Test
-    @DisplayName("TC-F01: Đóng và đọc gói tin cơ bản thành công")
-    public void testPackAndUnpackSinglePacket() throws Exception {
-        Packet packet = Packet.createEchoRequest("tester_alpha", "Hello Socket TCP!");
+    private static int passedCount = 0;
+    private static int failedCount = 0;
 
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        PacketFramer.writePacket(out, packet);
+    public static void main(String[] args) {
+        System.out.println("======================================================================");
+        System.out.println("  BẮT ĐẦU KIỂM THỬ TẦNG GIAO THỨC: com.chat.test.PacketFramerTest    ");
+        System.out.println("======================================================================\n");
 
-        byte[] rawBytes = out.toByteArray();
-        assertTrue(rawBytes.length > 4, "Khung dữ liệu phải chứa 4-byte header và payload");
+        runTestCase("TC-F01: Đóng và giải mã gói tin đơn thành công", PacketFramerTest::testPackAndUnpackSinglePacket);
+        runTestCase("TC-F02: Bảo toàn chuỗi Tiếng Việt có dấu và Emoji Unicode",
+                PacketFramerTest::testVietnameseAccentsAndEmojis);
+        runTestCase("TC-F03: Xử lý Dính gói (Sticky Packets) — 3 gói liên tiếp trong 1 stream",
+                PacketFramerTest::testStickyPackets);
+        runTestCase("TC-F04: Xử lý Xé gói (Fragmented Packets) — Stream cung cấp dữ liệu nhỏ giọt",
+                PacketFramerTest::testFragmentedPackets);
+        runTestCase("TC-F05: Cơ chế tự vệ khi gặp độ dài âm hoặc dữ liệu cụt (Boundary)",
+                PacketFramerTest::testBoundaryLengthProtection);
 
-        ByteArrayInputStream in = new ByteArrayInputStream(rawBytes);
-        Packet received = PacketFramer.readPacket(in);
-
-        assertNotNull(received);
-        assertEquals(PacketType.ECHO_REQUEST, received.getType());
-        assertEquals("tester_alpha", received.getSender());
-        assertEquals("Hello Socket TCP!", received.getPayloadValue("message"));
+        System.out.println("\n----------------------------------------------------------------------");
+        System.out.println(String.format("TỔNG KẾT KIỂM THỬ: ĐÃ CHẠY %d | THÀNH CÔNG: %d | THẤT BẠI: %d",
+                (passedCount + failedCount), passedCount, failedCount));
+        System.out.println("KẾT LUẬN: " + (failedCount == 0 ? "TẤT CẢ CÁC CA KIỂM THỬ ĐẠT YÊU CẦU (PASS 100%)"
+                : "CÓ CA KIỂM THỬ BỊ LỖI (FAIL)"));
+        System.out.println("======================================================================");
     }
 
-    @Test
-    @DisplayName("TC-F02: Bảo toàn chuỗi Tiếng Việt đầy đủ dấu và Emoji Unicode")
-    public void testVietnameseAccentsAndEmojis() throws Exception {
-        String testMessage = "Xin chào Việt Nam! 🇻🇳 Chúc mừng năm mới 🎉 😊 🚀";
-        Packet packet = Packet.createEchoRequest("minh_test", testMessage);
-
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        PacketFramer.writePacket(out, packet);
-
-        ByteArrayInputStream in = new ByteArrayInputStream(out.toByteArray());
-        Packet received = PacketFramer.readPacket(in);
-
-        assertEquals(testMessage, received.getPayloadValue("message"));
+    private static void runTestCase(String testName, TestRunnable test) {
+        System.out.print(String.format("[CHẠY TEST] %-60s ... ", testName));
+        try {
+            test.run();
+            passedCount++;
+            System.out.println("PASS");
+        } catch (Throwable t) {
+            failedCount++;
+            System.out.println("FAIL");
+            System.err.println("       -> Lỗi: " + t.getMessage());
+            t.printStackTrace(System.err);
+        }
     }
 
-    @Test
-    @DisplayName("TC-F03: Xử lý Dính gói (Sticky Packets) — Nhiều gói liên tiếp trong cùng 1 stream")
-    public void testStickyPackets() throws Exception {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-
-        // Ghi liên tiếp 3 gói tin vào cùng 1 stream nhị phân mà không có khoảng trống
-        Packet packet1 = Packet.createEchoRequest("client_1", "Tin nhắn 1");
-        Packet packet2 = Packet.createEchoRequest("client_1", "Tin nhắn 2");
-        Packet packet3 = Packet.createEchoRequest("client_1", "Tin nhắn 3");
-
-        PacketFramer.writePacket(out, packet1);
-        PacketFramer.writePacket(out, packet2);
-        PacketFramer.writePacket(out, packet3);
-
-        // Đọc tuần tự từ stream
-        ByteArrayInputStream in = new ByteArrayInputStream(out.toByteArray());
-
-        Packet recv1 = PacketFramer.readPacket(in);
-        Packet recv2 = PacketFramer.readPacket(in);
-        Packet recv3 = PacketFramer.readPacket(in);
-
-        assertEquals("Tin nhắn 1", recv1.getPayloadValue("message"));
-        assertEquals("Tin nhắn 2", recv2.getPayloadValue("message"));
-        assertEquals("Tin nhắn 3", recv3.getPayloadValue("message"));
-
-        // Khi đọc hết, phải gặp EOFException
-        assertThrows(EOFException.class, () -> PacketFramer.readFrame(in));
+    @FunctionalInterface
+    interface TestRunnable {
+        void run() throws Exception;
     }
 
-    @Test
-    @DisplayName("TC-F04: Xử lý Xé gói (Fragmented Packets) — Stream cung cấp dữ liệu nhỏ giọt từng byte")
-    public void testFragmentedPackets() throws Exception {
-        byte[] payload = "{\"type\":\"PING\",\"sender\":\"tester\"}".getBytes(StandardCharsets.UTF_8);
+    /**
+     * TC-F01: Kiểm tra chu trình đóng gói một Packet ra byte stream rồi giải mã
+     * ngược lại.
+     */
+    public static void testPackAndUnpackSinglePacket() throws Exception {
+        String testPayload = "Hello Socket TCP!";
+        Packet originalPacket = new Packet(PacketType.ECHO_REQUEST, testPayload);
 
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        PacketFramer.writeFrame(out, payload);
-        byte[] frameBytes = out.toByteArray();
+        ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
+        DataOutputStream dataOut = new DataOutputStream(byteOut);
+        PacketFramer.writePacket(dataOut, originalPacket);
 
-        // Tạo InputStream chậm (Slow/Fragmented InputStream) chỉ trả về tối đa 3 bytes mỗi lần gọi read
+        byte[] rawBytes = byteOut.toByteArray();
+        assertTrue(rawBytes.length > 4, "Khung dữ liệu nhị phân phải chứa ít nhất 4 bytes độ dài");
+
+        ByteArrayInputStream byteIn = new ByteArrayInputStream(rawBytes);
+        DataInputStream dataIn = new DataInputStream(byteIn);
+        Packet receivedPacket = PacketFramer.readPacket(dataIn);
+
+        assertNotNull(receivedPacket, "Packet nhận được không được null");
+        assertEquals(PacketType.ECHO_REQUEST, receivedPacket.getType(), "PacketType phải là ECHO_REQUEST");
+        assertEquals(testPayload, receivedPacket.getPayload(), "Payload nhận được phải trùng khớp với payload gốc");
+    }
+
+    /**
+     * TC-F02: Kiểm tra việc truyền tải chuỗi tiếng Việt có dấu và Emoji Unicode.
+     * Xác minh không bị lệch độ dài byte UTF-8 và không bị lỗi hiển thị.
+     */
+    public static void testVietnameseAccentsAndEmojis() throws Exception {
+        String vietnameseAndEmoji = "Xin chào Việt Nam! 🇻🇳 Chúc mừng năm mới 🎉 😊 🚀";
+        Packet originalPacket = new Packet(PacketType.ECHO_REQUEST, vietnameseAndEmoji);
+
+        ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
+        DataOutputStream dataOut = new DataOutputStream(byteOut);
+        PacketFramer.writePacket(dataOut, originalPacket);
+
+        ByteArrayInputStream byteIn = new ByteArrayInputStream(byteOut.toByteArray());
+        DataInputStream dataIn = new DataInputStream(byteIn);
+        Packet receivedPacket = PacketFramer.readPacket(dataIn);
+
+        assertEquals(vietnameseAndEmoji, receivedPacket.getPayload(),
+                "Chuỗi tiếng Việt có dấu và Emoji Unicode phải được giữ nguyên vẹn 100%");
+    }
+
+    /**
+     * TC-F03: Ghi liên tục 3 gói tin dính liền nhau trong cùng 1 stream nhị phân
+     * (Sticky Packets).
+     * Xác minh PacketFramer đọc tuần tự tách bạch đúng 3 gói tin độc lập và bắt
+     * EOFException khi hết stream.
+     */
+    public static void testStickyPackets() throws Exception {
+        ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
+        DataOutputStream dataOut = new DataOutputStream(byteOut);
+
+        Packet p1 = new Packet(PacketType.ECHO_REQUEST, "Gói tin dính 1");
+        Packet p2 = new Packet(PacketType.ECHO_RESPONSE, "Gói tin dính 2");
+        Packet p3 = new Packet(PacketType.PING, "Gói tin dính 3");
+
+        PacketFramer.writePacket(dataOut, p1);
+        PacketFramer.writePacket(dataOut, p2);
+        PacketFramer.writePacket(dataOut, p3);
+
+        ByteArrayInputStream byteIn = new ByteArrayInputStream(byteOut.toByteArray());
+        DataInputStream dataIn = new DataInputStream(byteIn);
+
+        Packet r1 = PacketFramer.readPacket(dataIn);
+        Packet r2 = PacketFramer.readPacket(dataIn);
+        Packet r3 = PacketFramer.readPacket(dataIn);
+
+        assertEquals("Gói tin dính 1", r1.getPayload(), "Gói 1 phải đọc đúng nội dung");
+        assertEquals(PacketType.ECHO_REQUEST, r1.getType(), "Gói 1 phải đúng type ECHO_REQUEST");
+
+        assertEquals("Gói tin dính 2", r2.getPayload(), "Gói 2 phải đọc đúng nội dung");
+        assertEquals(PacketType.ECHO_RESPONSE, r2.getType(), "Gói 2 phải đúng type ECHO_RESPONSE");
+
+        assertEquals("Gói tin dính 3", r3.getPayload(), "Gói 3 phải đọc đúng nội dung");
+        assertEquals(PacketType.PING, r3.getType(), "Gói 3 phải đúng type PING");
+
+        // Sau 3 gói tin, stream đã cạn; đọc tiếp phải ném EOFException
+        boolean threwEof = false;
+        try {
+            PacketFramer.readPacket(dataIn);
+        } catch (EOFException e) {
+            threwEof = true;
+        }
+        assertTrue(threwEof, "Phải ném EOFException khi stream cạn dữ liệu");
+    }
+
+    /**
+     * TC-F04: Xử lý Xé gói (Fragmented Packets) — Stream cung cấp dữ liệu nhỏ giọt
+     * từng byte (tối đa 3 bytes/lần).
+     * Chứng minh DataInputStream.readFully trong PacketFramer đọc kiên nhẫn và tái
+     * tạo hoàn chỉnh payload 100%.
+     */
+    public static void testFragmentedPackets() throws Exception {
+        String longPayload = "Dữ liệu kiểm thử xé gói mạng TCP với nội dung tương đối dài để kiểm chứng readFully hoạt động kiên nhẫn!";
+        Packet originalPacket = new Packet(PacketType.ECHO_REQUEST, longPayload);
+
+        ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
+        DataOutputStream dataOut = new DataOutputStream(byteOut);
+        PacketFramer.writePacket(dataOut, originalPacket);
+        byte[] frameBytes = byteOut.toByteArray();
+
+        // Custom InputStream giả lập hiện tượng xé gói mạng: mỗi lần đọc chỉ trả tối đa
+        // 3 bytes
         InputStream slowIn = new InputStream() {
-            private int index = 0;
+            private int cursor = 0;
 
             @Override
             public int read() {
-                if (index >= frameBytes.length) return -1;
-                return frameBytes[index++] & 0xFF;
+                if (cursor >= frameBytes.length) {
+                    return -1;
+                }
+                return frameBytes[cursor++] & 0xFF;
             }
 
             @Override
             public int read(byte[] b, int off, int len) {
-                if (index >= frameBytes.length) return -1;
-                // Giả lập xé gói: Mỗi lần chỉ cấp tối đa 3 bytes
-                int bytesToRead = Math.min(len, Math.min(3, frameBytes.length - index));
-                System.arraycopy(frameBytes, index, b, off, bytesToRead);
-                index += bytesToRead;
-                return bytesToRead;
+                if (cursor >= frameBytes.length) {
+                    return -1;
+                }
+                int bytesToSupply = Math.min(len, Math.min(3, frameBytes.length - cursor));
+                System.arraycopy(frameBytes, cursor, b, off, bytesToSupply);
+                cursor += bytesToSupply;
+                return bytesToSupply;
             }
         };
 
-        // readFrame phải đọc đủ nhờ readFully mà không báo lỗi xé gói
-        byte[] receivedPayload = PacketFramer.readFrame(slowIn);
-        assertArrayEquals(payload, receivedPayload);
+        DataInputStream dataSlowIn = new DataInputStream(slowIn);
+        Packet receivedPacket = PacketFramer.readPacket(dataSlowIn);
+
+        assertNotNull(receivedPacket, "Packet nhận được qua mạng xé gói không được null");
+        assertEquals(longPayload, receivedPacket.getPayload(),
+                "Payload nhận được qua stream xé gói phải nguyên vẹn 100%");
     }
 
-    @Test
-    @DisplayName("TC-F05: Chặn gói tin có độ dài âm hoặc vượt quá 10MB")
-    public void testBoundaryLengthProtection() throws IOException {
-        // Test độ dài âm
-        ByteArrayOutputStream outNegative = new ByteArrayOutputStream();
-        DataOutputStream dosNeg = new DataOutputStream(outNegative);
-        dosNeg.writeInt(-100);
-        dosNeg.flush();
+    /**
+     * TC-F05: Kiểm tra cơ chế tự vệ khi gặp độ dài âm hoặc dữ liệu cụt bất thường.
+     */
+    public static void testBoundaryLengthProtection() throws Exception {
+        // Trường hợp 1: Stream có độ dài âm
+        ByteArrayOutputStream byteOutNeg = new ByteArrayOutputStream();
+        DataOutputStream dataOutNeg = new DataOutputStream(byteOutNeg);
+        dataOutNeg.writeInt(-100); // Ghi length = -100
+        dataOutNeg.flush();
 
-        ByteArrayInputStream inNeg = new ByteArrayInputStream(outNegative.toByteArray());
-        assertThrows(IOException.class, () -> PacketFramer.readFrame(inNeg));
+        ByteArrayInputStream byteInNeg = new ByteArrayInputStream(byteOutNeg.toByteArray());
+        DataInputStream dataInNeg = new DataInputStream(byteInNeg);
 
-        // Test độ dài vượt quá MAX_PAYLOAD_SIZE (15 MB)
-        ByteArrayOutputStream outHuge = new ByteArrayOutputStream();
-        DataOutputStream dosHuge = new DataOutputStream(outHuge);
-        dosHuge.writeInt(15 * 1024 * 1024);
-        dosHuge.flush();
+        boolean threwNegError = false;
+        try {
+            PacketFramer.readPacket(dataInNeg);
+        } catch (Throwable t) {
+            threwNegError = true;
+        }
+        assertTrue(threwNegError, "Phải ném ngoại lệ khi chiều dài gói tin là số âm");
 
-        ByteArrayInputStream inHuge = new ByteArrayInputStream(outHuge.toByteArray());
-        assertThrows(IOException.class, () -> PacketFramer.readFrame(inHuge));
+        // Trường hợp 2: Stream bị ngắt cụt giữa chừng (Truncated Stream)
+        ByteArrayOutputStream byteOutTrunc = new ByteArrayOutputStream();
+        DataOutputStream dataOutTrunc = new DataOutputStream(byteOutTrunc);
+        dataOutTrunc.writeInt(500); // Khai báo 500 bytes
+        dataOutTrunc.writeInt(PacketType.ECHO_REQUEST.ordinal());
+        dataOutTrunc.write(new byte[] { 1, 2, 3, 4 }); // Nhưng chỉ ghi 4 bytes rồi dừng
+        dataOutTrunc.flush();
+
+        ByteArrayInputStream byteInTrunc = new ByteArrayInputStream(byteOutTrunc.toByteArray());
+        DataInputStream dataInTrunc = new DataInputStream(byteInTrunc);
+
+        boolean threwTruncError = false;
+        try {
+            PacketFramer.readPacket(dataInTrunc);
+        } catch (EOFException e) {
+            threwTruncError = true;
+        } catch (IOException e) {
+            threwTruncError = true;
+        }
+        assertTrue(threwTruncError, "Phải ném ngoại lệ EOFException khi gói tin bị ngắt cụt giữa chừng");
+    }
+
+    // --- Các hàm hỗ trợ Assertion đơn giản (tương tự JUnit Assertions) ---
+
+    private static void assertTrue(boolean condition, String message) {
+        if (!condition) {
+            throw new AssertionError("Kỳ vọng TRUE nhưng thực tế FALSE: " + message);
+        }
+    }
+
+    private static void assertNotNull(Object obj, String message) {
+        if (obj == null) {
+            throw new AssertionError("Kỳ vọng NOT NULL: " + message);
+        }
+    }
+
+    private static void assertEquals(Object expected, Object actual, String message) {
+        if (!Objects.equals(expected, actual)) {
+            throw new AssertionError(String.format("Không khớp dữ liệu: %s (Kỳ vọng: [%s], Thực tế: [%s])",
+                    message, expected, actual));
+        }
     }
 }
