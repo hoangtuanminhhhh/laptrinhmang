@@ -77,7 +77,7 @@ public class PacketFramerTest {
      */
     public static void testPackAndUnpackSinglePacket() throws Exception {
         String testPayload = "Hello Socket TCP!";
-        Packet originalPacket = new Packet(PacketType.ECHO_REQUEST, testPayload);
+        Packet originalPacket = createTextPacket(PacketType.ECHO_REQUEST, testPayload);
 
         ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
         DataOutputStream dataOut = new DataOutputStream(byteOut);
@@ -92,7 +92,8 @@ public class PacketFramerTest {
 
         assertNotNull(receivedPacket, "Packet nhận được không được null");
         assertEquals(PacketType.ECHO_REQUEST, receivedPacket.getType(), "PacketType phải là ECHO_REQUEST");
-        assertEquals(testPayload, receivedPacket.getPayload(), "Payload nhận được phải trùng khớp với payload gốc");
+        assertEquals(testPayload, receivedPacket.getPayloadValue("message"),
+                "Payload nhận được phải trùng khớp với payload gốc");
     }
 
     /**
@@ -101,7 +102,7 @@ public class PacketFramerTest {
      */
     public static void testVietnameseAccentsAndEmojis() throws Exception {
         String vietnameseAndEmoji = "Xin chào Việt Nam! 🇻🇳 Chúc mừng năm mới 🎉 😊 🚀";
-        Packet originalPacket = new Packet(PacketType.ECHO_REQUEST, vietnameseAndEmoji);
+        Packet originalPacket = createTextPacket(PacketType.ECHO_REQUEST, vietnameseAndEmoji);
 
         ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
         DataOutputStream dataOut = new DataOutputStream(byteOut);
@@ -111,7 +112,7 @@ public class PacketFramerTest {
         DataInputStream dataIn = new DataInputStream(byteIn);
         Packet receivedPacket = PacketFramer.readPacket(dataIn);
 
-        assertEquals(vietnameseAndEmoji, receivedPacket.getPayload(),
+        assertEquals(vietnameseAndEmoji, receivedPacket.getPayloadValue("message"),
                 "Chuỗi tiếng Việt có dấu và Emoji Unicode phải được giữ nguyên vẹn 100%");
     }
 
@@ -125,9 +126,9 @@ public class PacketFramerTest {
         ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
         DataOutputStream dataOut = new DataOutputStream(byteOut);
 
-        Packet p1 = new Packet(PacketType.ECHO_REQUEST, "Gói tin dính 1");
-        Packet p2 = new Packet(PacketType.ECHO_RESPONSE, "Gói tin dính 2");
-        Packet p3 = new Packet(PacketType.PING, "Gói tin dính 3");
+        Packet p1 = createTextPacket(PacketType.ECHO_REQUEST, "Gói tin dính 1");
+        Packet p2 = createTextPacket(PacketType.ECHO_RESPONSE, "Gói tin dính 2");
+        Packet p3 = createTextPacket(PacketType.PING, "Gói tin dính 3");
 
         PacketFramer.writePacket(dataOut, p1);
         PacketFramer.writePacket(dataOut, p2);
@@ -140,13 +141,13 @@ public class PacketFramerTest {
         Packet r2 = PacketFramer.readPacket(dataIn);
         Packet r3 = PacketFramer.readPacket(dataIn);
 
-        assertEquals("Gói tin dính 1", r1.getPayload(), "Gói 1 phải đọc đúng nội dung");
+        assertEquals("Gói tin dính 1", r1.getPayloadValue("message"), "Gói 1 phải đọc đúng nội dung");
         assertEquals(PacketType.ECHO_REQUEST, r1.getType(), "Gói 1 phải đúng type ECHO_REQUEST");
 
-        assertEquals("Gói tin dính 2", r2.getPayload(), "Gói 2 phải đọc đúng nội dung");
+        assertEquals("Gói tin dính 2", r2.getPayloadValue("message"), "Gói 2 phải đọc đúng nội dung");
         assertEquals(PacketType.ECHO_RESPONSE, r2.getType(), "Gói 2 phải đúng type ECHO_RESPONSE");
 
-        assertEquals("Gói tin dính 3", r3.getPayload(), "Gói 3 phải đọc đúng nội dung");
+        assertEquals("Gói tin dính 3", r3.getPayloadValue("message"), "Gói 3 phải đọc đúng nội dung");
         assertEquals(PacketType.PING, r3.getType(), "Gói 3 phải đúng type PING");
 
         // Sau 3 gói tin, stream đã cạn; đọc tiếp phải ném EOFException
@@ -167,7 +168,7 @@ public class PacketFramerTest {
      */
     public static void testFragmentedPackets() throws Exception {
         String longPayload = "Dữ liệu kiểm thử xé gói mạng TCP với nội dung tương đối dài để kiểm chứng readFully hoạt động kiên nhẫn!";
-        Packet originalPacket = new Packet(PacketType.ECHO_REQUEST, longPayload);
+        Packet originalPacket = createTextPacket(PacketType.ECHO_REQUEST, longPayload);
 
         ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
         DataOutputStream dataOut = new DataOutputStream(byteOut);
@@ -203,7 +204,7 @@ public class PacketFramerTest {
         Packet receivedPacket = PacketFramer.readPacket(dataSlowIn);
 
         assertNotNull(receivedPacket, "Packet nhận được qua mạng xé gói không được null");
-        assertEquals(longPayload, receivedPacket.getPayload(),
+        assertEquals(longPayload, receivedPacket.getPayloadValue("message"),
                 "Payload nhận được qua stream xé gói phải nguyên vẹn 100%");
     }
 
@@ -251,6 +252,10 @@ public class PacketFramerTest {
     }
 
     // --- Các hàm hỗ trợ Assertion đơn giản (tương tự JUnit Assertions) ---
+
+    private static Packet createTextPacket(PacketType type, String message) {
+        return new Packet(type, "CLIENT", "SERVER").addPayload("message", message);
+    }
 
     private static void assertTrue(boolean condition, String message) {
         if (!condition) {
