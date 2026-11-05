@@ -2,6 +2,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.chat</groupId>
@@ -12,9 +13,25 @@
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+        <javafx.version>21.0.6</javafx.version>
+        <jackson.version>2.17.2</jackson.version>
     </properties>
 
     <dependencies>
+        <!-- JavaFX: Thư viện giao diện -->
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-controls</artifactId>
+            <version>${javafx.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-fxml</artifactId>
+            <version>${javafx.version}</version>
+        </dependency>
+
         <!-- SQLite JDBC Driver cho Database -->
         <dependency>
             <groupId>org.xerial</groupId>
@@ -22,7 +39,7 @@
             <version>3.45.1.0</version>
         </dependency>
 
-        <!-- Bcrypt Hash Mật khẩu -->
+        <!-- BCrypt Hash mật khẩu -->
         <dependency>
             <groupId>at.favre.lib</groupId>
             <artifactId>bcrypt</artifactId>
@@ -36,26 +53,14 @@
             <version>2.10.1</version>
         </dependency>
 
-        <!-- Jackson Databind cho Protocol JSON theo dac ta TV6 -->
+        <!-- Jackson Databind cho Protocol JSON -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <version>2.17.0</version>
+            <version>${jackson.version}</version>
         </dependency>
 
-        <!-- JavaFX 21.0.2 (TV4, TV5 UI) -->
-        <dependency>
-            <groupId>org.openjfx</groupId>
-            <artifactId>javafx-controls</artifactId>
-            <version>21.0.2</version>
-        </dependency>
-        <dependency>
-            <groupId>org.openjfx</groupId>
-            <artifactId>javafx-fxml</artifactId>
-            <version>21.0.2</version>
-        </dependency>
-
-        <!-- JUnit 5 (TV6 Unit Testing) -->
+        <!-- JUnit 5 (Unit Testing) -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
@@ -63,4 +68,5 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
 </project>
