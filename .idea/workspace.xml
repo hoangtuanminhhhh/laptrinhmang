@@ -5,15 +5,54 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="cf7f9b44-2060-4b5a-b55b-0371b9b1026e" name="Changes" comment="xóa file trùng">
-      <change afterPath="$PROJECT_DIR$/laptrinhmang/Code/src/main/java/com/chat/client/TestClient.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/laptrinhmang/Code/src/main/java/com/chat/common/protocol/Packet.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/laptrinhmang/Code/src/main/java/com/chat/common/protocol/PacketFramer.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/laptrinhmang/Code/src/main/java/com/chat/common/protocol/PacketType.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/laptrinhmang/Code/src/main/java/com/chat/server/ServerApp.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/laptrinhmang/Code/src/main/java/com/chat/server/core/ChatServer.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/laptrinhmang/Code/src/main/java/com/chat/server/core/ClientHandler.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/DOCX/.gitkeep" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Extra/.gitkeep" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/PPTX/.gitkeep" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/laptrinhmang/Code/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/laptrinhmang/Code/.idea/workspace.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/laptrinhmang/Code/chat.db" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/laptrinhmang/Code/pom.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/laptrinhmang/Code/sources.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/laptrinhmang/Code/src/main/java/com/chat/client/.gitkeep" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/laptrinhmang/Code/src/main/java/com/chat/client/ClientApp.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/laptrinhmang/Code/src/main/java/com/chat/client/ConfigDialogController.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/laptrinhmang/Code/src/main/java/com/chat/client/MainChatController.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/laptrinhmang/Code/src/main/java/com/chat/client/component/AvatarView.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/laptrinhmang/Code/src/main/java/com/chat/client/component/EmojiPickerPopup.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/laptrinhmang/Code/src/main/java/com/chat/client/net/NetworkEventListener.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/laptrinhmang/Code/src/main/java/com/chat/client/net/NetworkService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/laptrinhmang/Code/src/main/java/com/chat/client/net/ServerListener.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/laptrinhmang/Code/src/main/java/com/chat/common/.gitkeep" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/laptrinhmang/Code/src/main/java/com/chat/common/config/NetworkConfig.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/laptrinhmang/Code/src/main/java/com/chat/common/model/Message.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/laptrinhmang/Code/src/main/java/com/chat/common/model/User.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/laptrinhmang/Code/src/main/java/com/chat/common/protocol/Packet.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/laptrinhmang/Code/src/main/java/com/chat/common/protocol/PacketFramer.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/laptrinhmang/Code/src/main/java/com/chat/common/protocol/PacketType.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/laptrinhmang/Code/src/main/java/com/chat/server/.gitkeep" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/laptrinhmang/Code/src/main/java/com/chat/server/ServerApp.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/laptrinhmang/Code/src/main/java/com/chat/server/core/ChatServer.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/laptrinhmang/Code/src/main/java/com/chat/server/core/ClientHandler.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/laptrinhmang/Code/src/main/java/com/chat/server/db/DatabaseManager.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/laptrinhmang/Code/src/main/java/com/chat/server/db/UserRepository.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/laptrinhmang/Code/src/main/java/com/chat/server/service/AuthService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/laptrinhmang/Code/src/main/resources/MainChatView.fxml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/laptrinhmang/Code/src/main/resources/client.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/laptrinhmang/Code/src/main/resources/configdialog.fxml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/laptrinhmang/Code/src/main/resources/images/default_avatar.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/laptrinhmang/Code/src/main/resources/schema.sql" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/laptrinhmang/Code/src/main/resources/server.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/laptrinhmang/Code/src/test/java/com/chat/test/AvatarEmojiDemoApp.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/laptrinhmang/Code/src/test/java/com/chat/test/AvatarEmojiDemoLauncher.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/laptrinhmang/Code/src/test/java/com/chat/test/DatabaseTest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/laptrinhmang/Code/src/test/java/com/chat/test/PacketFramerTest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/laptrinhmang/Code/src/test/java/com/chat/test/sources.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/laptrinhmang/DOCX/.gitkeep" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/laptrinhmang/Extra/.gitkeep" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/laptrinhmang/PPTX/.gitkeep" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/laptrinhmang/chat.db" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -37,6 +76,11 @@
     </option>
   </component>
   <component name="Git.Settings">
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$" value="tv3-giahuy" />
+      </map>
+    </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="GitHubPullRequestSearchHistory">{
@@ -45,12 +89,12 @@
     &quot;assignee&quot;: &quot;itsthienphuc&quot;
   }
 }</component>
-  <component name="GithubPullRequestsUISettings"><![CDATA[{
-  "selectedUrlAndAccountId": {
-    "url": "https://github.com/hoangtuanminhhhh/laptrinhmang",
-    "accountId": "2aede790-6de3-4573-8690-8d40c60152e0"
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/hoangtuanminhhhh/laptrinhmang&quot;,
+    &quot;accountId&quot;: &quot;2aede790-6de3-4573-8690-8d40c60152e0&quot;
   }
-}]]></component>
+}</component>
   <component name="McpProjectServerCommands">
     <commands />
     <urls />
@@ -148,12 +192,14 @@
     "ModuleVcsDetector.initialDetectionPerformed": "true",
     "RunOnceActivity.MCP Project settings loaded": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
     "RunOnceActivity.git.unshallow": "true",
     "RunOnceActivity.typescript.service.memoryLimit.init": "true",
     "codeWithMe.voiceChat.enabledByDefault": "false",
     "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
     "copilot.chat.legacySessionMetadata.migrated": "true",
     "git-widget-placeholder": "main",
+    "ignore.preview.features.used": "true",
     "ignore.virus.scanning.warn.message": "true",
     "junie.onboarding.icon.badge.shown": "true",
     "kotlin-language-version-configured": "true",
@@ -167,6 +213,12 @@
     "to.speed.mode.migration.done": "true"
   }
 }]]></component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\htuan\IdeaProjects\laptrinhmang" />
+      <recent name="C:\Users\htuan\IdeaProjects" />
+    </key>
+  </component>
   <component name="RunManager" selected="Application.TestClient">
     <configuration name="ServerApp" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="com.chat.server.ServerApp" />
