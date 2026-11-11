@@ -12,13 +12,18 @@ public enum PacketType {
     CONNECT_REQUEST,
     CONNECT_RESPONSE,
 
-    // Xác thực tài khoản
+    // Xác thực & Tài khoản
     LOGIN_REQUEST,
     LOGIN_RESPONSE,
+    REGISTER_REQUEST,
+    REGISTER_RESPONSE,
+    LOGOUT_REQUEST,
+    LOGOUT_RESPONSE,
 
-    // Nhắn tin cơ bản
+    // Nhắn tin cơ bản & Xác nhận ACK
     MESSAGE_SEND,
     MESSAGE_RECEIVE,
+    MESSAGE_ACK,
 
     // Trả lời tin nhắn cụ thể
     REPLY_SEND,
@@ -27,6 +32,12 @@ public enum PacketType {
     // Chuyển tiếp tin nhắn
     FORWARD_SEND,
     FORWARD_RECEIVE,
+
+    // Ảnh đại diện & Trạng thái người dùng
+    AVATAR_UPDATE,
+    AVATAR_RESPONSE,
+    USER_LIST,
+    USER_STATUS,
 
     // Giữ kết nối (Heartbeat)
     PING,

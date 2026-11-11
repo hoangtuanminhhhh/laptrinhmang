@@ -1,5 +1,7 @@
 package com.chat.common.protocol;
 
+import com.fasterxml.jackson.annotation.JsonGetter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonSetter;
@@ -73,12 +75,18 @@ public class Packet {
         return this.payload != null ? this.payload.get(key) : null;
     }
 
+    @JsonIgnore
     public String getPayload() {
         Object val = getPayloadValue("message");
         if (val == null) {
             val = getPayloadValue("originalMessage");
         }
         return val != null ? val.toString() : (payload != null ? payload.toString() : null);
+    }
+
+    @JsonGetter("payload")
+    public Map<String, Object> getPayloadMap() {
+        return payload;
     }
 
     public byte[] toBytes() throws JsonProcessingException {
