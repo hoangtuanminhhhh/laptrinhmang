@@ -90,8 +90,16 @@ public class ServerListener implements Runnable {
      * Bọc try-catch để ngoại lệ ở tầng UI không làm sập luồng đọc socket.
      */
     private void dispatchPacket(Packet packet) {
+        // Bất kỳ gói tin hợp lệ nào từ Server đều chứng tỏ kết nối còn sống
+        networkService.onServerActivity();
+
         if (packet.getType() == PacketType.PING) {
             networkService.sendPong(packet.getRequestId());
+            return;
+        }
+
+        if (packet.getType() == PacketType.PONG) {
+            networkService.onPongReceived(packet);
             return;
         }
 

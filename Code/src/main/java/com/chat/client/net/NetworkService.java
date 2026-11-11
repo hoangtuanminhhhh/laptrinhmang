@@ -58,9 +58,11 @@ public class NetworkService {
     private volatile DataOutputStream outputStream;
     private volatile ServerListener serverListener;
     private volatile Thread listenerThread;
+    private volatile HeartbeatService heartbeatService;
 
     private final AtomicBoolean connected = new AtomicBoolean(false);
     private final AtomicBoolean connecting = new AtomicBoolean(false);
+    private final AtomicBoolean networkLost = new AtomicBoolean(false);
 
     // Username của phiên đăng nhập hiện tại (dùng làm trường "sender" cho các gói tin gửi đi)
     private volatile String currentUsername = GUEST_USER;
@@ -69,9 +71,20 @@ public class NetworkService {
     private String defaultIp = "127.0.0.1";
     private int defaultPort = 8888;
     private int defaultTimeout = 5000;
+    private long heartbeatIntervalMs = HeartbeatService.DEFAULT_INTERVAL_MS;
+    private int heartbeatMaxMissed = HeartbeatService.DEFAULT_MAX_MISSED;
 
     public NetworkService() {
         loadClientProperties();
+    }
+
+    /**
+     * Constructor cho phép tùy chỉnh thông số Heartbeat (phục vụ kiểm thử tự động).
+     */
+    public NetworkService(long heartbeatIntervalMs, int heartbeatMaxMissed) {
+        loadClientProperties();
+        this.heartbeatIntervalMs = heartbeatIntervalMs;
+        this.heartbeatMaxMissed = heartbeatMaxMissed;
     }
 
     public static NetworkService getInstance() {
@@ -89,6 +102,10 @@ public class NetworkService {
                 defaultIp = props.getProperty("server.ip", "127.0.0.1").trim();
                 defaultPort = Integer.parseInt(props.getProperty("server.port", "8888").trim());
                 defaultTimeout = Integer.parseInt(props.getProperty("connection.timeout", "5000").trim());
+                heartbeatIntervalMs = Long.parseLong(props.getProperty("heartbeat.interval",
+                        String.valueOf(HeartbeatService.DEFAULT_INTERVAL_MS)).trim());
+                heartbeatMaxMissed = Integer.parseInt(props.getProperty("heartbeat.max.missed",
+                        String.valueOf(HeartbeatService.DEFAULT_MAX_MISSED)).trim());
             }
         } catch (Exception e) {
             System.err.println("[NetworkService] Không thể đọc client.properties, sử dụng cấu hình mặc định: " + e.getMessage());
@@ -180,6 +197,7 @@ public class NetworkService {
                     this.outputStream = out;
                     connected.set(true);
                     connecting.set(false);
+                    networkLost.set(false);
                 }
 
                 notifyConnected();
@@ -192,6 +210,10 @@ public class NetworkService {
                     listenerThread = new Thread(serverListener, "Server-Packet-Listener");
                     listenerThread.setDaemon(true);
                     listenerThread.start();
+
+                    heartbeatService = new HeartbeatService(heartbeatIntervalMs, heartbeatMaxMissed,
+                            this::sendPing, this::onHeartbeatTimeout);
+                    heartbeatService.start();
                 }
 
             } catch (IllegalArgumentException e) {
@@ -496,6 +518,15 @@ public class NetworkService {
     }
 
     /**
+     * Gửi gói PING giữ kết nối (được HeartbeatService gọi định kỳ mỗi 15 giây).
+     */
+    public void sendPing() {
+        if (isConnected()) {
+            sendPacket(new Packet(PacketType.PING, currentUsername, SERVER_ID));
+        }
+    }
+
+    /**
      * Phản hồi gói PING từ Server bằng gói PONG (kèm requestId gốc).
      *
      * @param requestId ID của gói PING nhận được từ Server
@@ -506,6 +537,32 @@ public class NetworkService {
             pong.setRequestId(requestId);
         }
         sendPacket(pong);
+    }
+
+    void onPongReceived(Packet pongPacket) {
+        networkLost.set(false);
+        HeartbeatService hb = this.heartbeatService;
+        if (hb != null) {
+            hb.onPongReceived();
+        }
+    }
+
+    void onServerActivity() {
+        networkLost.set(false);
+        HeartbeatService hb = this.heartbeatService;
+        if (hb != null) {
+            hb.onServerActivity();
+        }
+    }
+
+    void onHeartbeatTimeout() {
+        if (!connected.get()) {
+            return;
+        }
+        networkLost.set(true);
+        notifyError("Mất kết nối tới máy chủ (quá " + heartbeatMaxMissed + " chu kỳ Heartbeat không nhận được phản hồi PONG).", null);
+        notifyConnectionLost();
+        handleConnectionClosed();
     }
 
     /**
@@ -539,6 +596,11 @@ public class NetworkService {
     synchronized void handleConnectionClosed() {
         boolean wasConnected = connected.getAndSet(false);
         connecting.set(false);
+
+        if (heartbeatService != null) {
+            heartbeatService.stop();
+            heartbeatService = null;
+        }
 
         if (serverListener != null) {
             serverListener.stop();
@@ -603,6 +665,12 @@ public class NetworkService {
         }
     }
 
+    void notifyConnectionLost() {
+        for (NetworkEventListener listener : listeners) {
+            listener.onConnectionLost();
+        }
+    }
+
     void notifyPacketReceived(Packet packet) {
         for (NetworkEventListener listener : listeners) {
             listener.onPacketReceived(packet);
@@ -626,6 +694,19 @@ public class NetworkService {
 
     public boolean isConnecting() {
         return connecting.get();
+    }
+
+    public boolean isNetworkLost() {
+        return networkLost.get();
+    }
+
+    public HeartbeatService getHeartbeatService() {
+        return heartbeatService;
+    }
+
+    public long getLastRttMs() {
+        HeartbeatService hb = this.heartbeatService;
+        return hb != null ? hb.getLastRttMs() : -1L;
     }
 
     public String getCurrentUsername() {

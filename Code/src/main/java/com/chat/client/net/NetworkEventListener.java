@@ -33,6 +33,14 @@ public interface NetworkEventListener {
     void onDisconnected();
 
     /**
+     * Được gọi khi Heartbeat xác định mất kết nối mạng (quá 3 chu kỳ PING không nhận được PONG).
+     * Giúp UI chuyển thanh trạng thái sang màu ĐỎ: "Mất kết nối tới Server. Đang thử kết nối lại...".
+     */
+    default void onConnectionLost() {
+        // Mặc định không bắt buộc override
+    }
+
+    /**
      * Được gọi khi nhận được một gói tin hoàn chỉnh từ Server.
      *
      * @param packet Gói tin đã được giải mã qua PacketFramer
