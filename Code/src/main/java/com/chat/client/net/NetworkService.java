@@ -495,6 +495,29 @@ public class NetworkService {
         sendPacket(echoPacket);
     }
 
+    /**
+     * Phản hồi gói PING từ Server bằng gói PONG (kèm requestId gốc).
+     *
+     * @param requestId ID của gói PING nhận được từ Server
+     */
+    void sendPong(String requestId) {
+        Packet pong = new Packet(PacketType.PONG, currentUsername, SERVER_ID);
+        if (requestId != null) {
+            pong.setRequestId(requestId);
+        }
+        sendPacket(pong);
+    }
+
+    /**
+     * Được ServerListener gọi khi luồng đọc kết thúc.
+     * Chỉ dọn dẹp kết nối nếu listener vừa dừng vẫn là listener hiện hành (tránh race condition khi nối lại).
+     */
+    synchronized void onListenerStopped(ServerListener stoppedListener) {
+        if (stoppedListener == this.serverListener) {
+            handleConnectionClosed();
+        }
+    }
+
     private static boolean isBlank(String s) {
         return s == null || s.trim().isEmpty();
     }
