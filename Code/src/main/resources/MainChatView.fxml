@@ -9,6 +9,7 @@
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.shape.Circle?>
 
 <BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="500.0" prefWidth="700.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.chat.client.MainChatController">
     <center>
@@ -32,4 +33,15 @@
             <ListView fx:id="userListView" VBox.vgrow="ALWAYS"/>
         </VBox>
     </right>
+    
+    <!-- THÊM THANH TRẠNG THÁI KẾT NỐI Ở ĐÂY -->
+    <bottom>
+        <HBox alignment="CENTER_LEFT" spacing="8.0" style="-fx-background-color: #f0f0f0; -fx-border-color: #d0d0d0;">
+            <padding>
+                <Insets bottom="5.0" left="10.0" right="10.0" top="5.0"/>
+            </padding>
+            <Circle fx:id="statusCircle" fill="GREEN" radius="5.0" />
+            <Label fx:id="statusLabel" text="Đã kết nối tới Server [192.168.1.10:8888]" />
+        </HBox>
+    </bottom>
 </BorderPane>

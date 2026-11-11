@@ -1,8 +1,8 @@
 package com.chat.common.protocol;
 
-<<<<<<< HEAD
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -30,6 +30,12 @@ public class Packet {
     public Packet() {
         this.timestamp = System.currentTimeMillis();
         this.payload = new HashMap<>();
+    }
+
+    public Packet(PacketType type, String payload) {
+        this();
+        this.type = type;
+        addPayload("message", payload);
     }
 
     public Packet(PacketType type, String sender, String receiver) {
@@ -65,6 +71,14 @@ public class Packet {
 
     public Object getPayloadValue(String key) {
         return this.payload != null ? this.payload.get(key) : null;
+    }
+
+    public String getPayload() {
+        Object val = getPayloadValue("message");
+        if (val == null) {
+            val = getPayloadValue("originalMessage");
+        }
+        return val != null ? val.toString() : (payload != null ? payload.toString() : null);
     }
 
     public byte[] toBytes() throws JsonProcessingException {
@@ -125,12 +139,16 @@ public class Packet {
         this.timestamp = timestamp;
     }
 
-    public Map<String, Object> getPayload() {
-        return payload;
-    }
-
-    public void setPayload(Map<String, Object> payload) {
-        this.payload = payload;
+    @JsonSetter("payload")
+    public void setPayload(Object payloadObj) {
+        if (payloadObj instanceof Map) {
+            this.payload = (Map<String, Object>) payloadObj;
+        } else if (payloadObj != null) {
+            this.payload = new HashMap<>();
+            this.payload.put("message", payloadObj.toString());
+        } else {
+            this.payload = new HashMap<>();
+        }
     }
 
     @Override
@@ -145,26 +163,3 @@ public class Packet {
                 '}';
     }
 }
-=======
-public class Packet {
-    private int length;
-    private PacketType type;
-    private String payload;
-
-    public Packet() {} // Dành cho Jackson
-
-    public Packet(PacketType type, String payload) {
-        this.type = type;
-        this.payload = payload;
-    }
-
-    public int getLength() { return length; }
-    public void setLength(int length) { this.length = length; }
-
-    public PacketType getType() { return type; }
-    public void setType(PacketType type) { this.type = type; }
-
-    public String getPayload() { return payload; }
-    public void setPayload(String payload) { this.payload = payload; }
-}
->>>>>>> 8baad60d68f0886283b7ccda1ca4376fd03e9b80

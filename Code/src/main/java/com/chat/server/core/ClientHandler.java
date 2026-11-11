@@ -32,14 +32,14 @@ public class ClientHandler implements Runnable {
                     PacketFramer.writePacket(out, response);
                 }
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             System.err.println("Client disconnected or error: " + e.getMessage());
         } finally {
             try {
                 if (socket != null && !socket.isClosed()) {
                     socket.close();
                 }
-            } catch (IOException ex) {
+            } catch (Exception ex) {
                 System.err.println("Error closing socket: " + ex.getMessage());
             }
         }
