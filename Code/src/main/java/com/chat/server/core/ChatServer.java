@@ -17,6 +17,18 @@ public class ChatServer {
         this.threadPool = Executors.newFixedThreadPool(maxThreads);
     }
 
+    /**
+     * Phương thức main để chạy Server trực tiếp qua dòng lệnh Maven.
+     */
+    public static void main(String[] args) {
+        int port = 8888; // Cổng mặc định khớp với cấu hình client
+        int maxThreads = 10; // Số lượng luồng tối đa trong pool
+        
+        System.out.println("[ChatServer] Đang khởi động Server trên cổng " + port + "...");
+        ChatServer server = new ChatServer(port, maxThreads);
+        server.start();
+    }
+
     public void start() {
         try {
             serverSocket = new ServerSocket(port);

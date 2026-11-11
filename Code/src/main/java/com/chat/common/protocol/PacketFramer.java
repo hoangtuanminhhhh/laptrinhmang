@@ -15,16 +15,11 @@ public class PacketFramer {
 
     /**
      * Kích thước payload tối đa được chấp nhận: 10 MB.
-     * Vượt quá kích thước này sẽ bị từ chối để tránh tràn bộ nhớ (OOM).
      */
     public static final int MAX_PAYLOAD_SIZE = 10 * 1024 * 1024;
 
     /**
      * Đóng khung và gửi một mảng byte nhị phân ra stream.
-     *
-     * @param out     OutputStream đích (thường từ Socket)
-     * @param payload Dữ liệu byte cần gửi (chuỗi JSON UTF-8)
-     * @throws IOException khi lỗi đường truyền hoặc payload vượt quá dung lượng
      */
     public static void writeFrame(OutputStream out, byte[] payload) throws IOException {
         if (payload == null) {
@@ -42,11 +37,6 @@ public class PacketFramer {
 
     /**
      * Đọc một khung nhị phân hoàn chỉnh từ InputStream.
-     * Sử dụng readFully để đảm bảo đọc đủ số byte được khai báo trong Header.
-     *
-     * @param in InputStream nguồn (thường từ Socket)
-     * @return Mảng byte chứa dữ liệu payload
-     * @throws IOException khi ngắt kết nối (EOF) hoặc dữ liệu sai định dạng
      */
     public static byte[] readFrame(InputStream in) throws IOException {
         DataInputStream dis = (in instanceof DataInputStream) ? (DataInputStream) in : new DataInputStream(in);
@@ -66,12 +56,12 @@ public class PacketFramer {
         }
 
         byte[] payload = new byte[length];
-        dis.readFully(payload); // Chờ và đọc đủ chính xác length bytes, giải quyết xé gói
+        dis.readFully(payload); // Đọc đủ chính xác length bytes, giải quyết xé gói
         return payload;
     }
 
     /**
-     * Tiện ích: Đóng gói và gửi một đối tượng Packet ra Stream.
+     * Đóng gói và gửi một đối tượng Packet ra Stream.
      */
     public static void writePacket(OutputStream out, Packet packet) throws IOException {
         byte[] bytes = packet.toBytes();
@@ -79,10 +69,48 @@ public class PacketFramer {
     }
 
     /**
-     * Tiện ích: Đọc một đối tượng Packet từ Stream.
+     * Đọc một đối tượng Packet từ Stream.
      */
     public static Packet readPacket(InputStream in) throws Exception {
         byte[] bytes = readFrame(in);
         return Packet.fromBytes(bytes);
     }
 }
+=======
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+
+public class PacketFramer {
+    private static final ObjectMapper objectMapper = new ObjectMapper();
+
+    public static void writePacket(DataOutputStream out, Packet packet) throws IOException {
+        String jsonPayload = objectMapper.writeValueAsString(packet.getPayload());
+        byte[] payloadBytes = jsonPayload.getBytes("UTF-8");
+        int length = payloadBytes.length + 4; // 4 bytes cho PacketType
+
+        out.writeInt(length);
+        out.writeInt(packet.getType().ordinal());
+        out.write(payloadBytes);
+        out.flush();
+    }
+
+    public static Packet readPacket(DataInputStream in) throws IOException {
+        int length = in.readInt();
+        int typeOrdinal = in.readInt();
+        PacketType type = PacketType.values()[typeOrdinal];
+
+        int payloadLength = length - 4;
+        byte[] payloadBytes = new byte[payloadLength];
+        in.readFully(payloadBytes);
+
+        String jsonPayload = new String(payloadBytes, "UTF-8");
+        String payload = objectMapper.readValue(jsonPayload, String.class);
+
+        Packet packet = new Packet(type, payload);
+        packet.setLength(length);
+        return packet;
+    }
+}
+>>>>>>> 8baad60d68f0886283b7ccda1ca4376fd03e9b80

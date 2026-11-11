@@ -4,7 +4,36 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="cf7f9b44-2060-4b5a-b55b-0371b9b1026e" name="Changes" comment="xóa file trùng" />
+    <list default="true" id="cf7f9b44-2060-4b5a-b55b-0371b9b1026e" name="Changes" comment="xóa file trùng">
+      <change afterPath="$PROJECT_DIR$/Code/src/main/java/com/chat/client/net/FxNetworkEventListener.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Code/src/main/java/com/chat/client/net/HeartbeatService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Code/src/main/java/com/chat/client/net/ReconnectManager.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Code/src/test/java/com/chat/test/AutoReconnectTest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Code/src/test/java/com/chat/test/DisconnectSimulationTest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Code/src/test/java/com/chat/test/HeartbeatServiceTest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Code/src/test/java/com/chat/test/NetworkEventListenerTest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Code/src/test/java/com/chat/test/NetworkServiceTest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Code/src/test/java/com/chat/test/PacketSerializationTest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Code/src/test/java/com/chat/test/ServerListenerTest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/MIDTERM_REPORT.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/TEST_PLAN_PHASE2.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Code/src/main/java/com/chat/client/MainChatController.java" beforeDir="false" afterPath="$PROJECT_DIR$/Code/src/main/java/com/chat/client/MainChatController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Code/src/main/java/com/chat/client/net/NetworkEventListener.java" beforeDir="false" afterPath="$PROJECT_DIR$/Code/src/main/java/com/chat/client/net/NetworkEventListener.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Code/src/main/java/com/chat/client/net/NetworkService.java" beforeDir="false" afterPath="$PROJECT_DIR$/Code/src/main/java/com/chat/client/net/NetworkService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Code/src/main/java/com/chat/client/net/ServerListener.java" beforeDir="false" afterPath="$PROJECT_DIR$/Code/src/main/java/com/chat/client/net/ServerListener.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Code/src/main/java/com/chat/common/protocol/Packet.java" beforeDir="false" afterPath="$PROJECT_DIR$/Code/src/main/java/com/chat/common/protocol/Packet.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Code/src/main/java/com/chat/common/protocol/PacketFramer.java" beforeDir="false" afterPath="$PROJECT_DIR$/Code/src/main/java/com/chat/common/protocol/PacketFramer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Code/src/main/java/com/chat/common/protocol/PacketType.java" beforeDir="false" afterPath="$PROJECT_DIR$/Code/src/main/java/com/chat/common/protocol/PacketType.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Code/src/main/java/com/chat/server/core/ChatServer.java" beforeDir="false" afterPath="$PROJECT_DIR$/Code/src/main/java/com/chat/server/core/ChatServer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Code/src/main/java/com/chat/server/core/ClientHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/Code/src/main/java/com/chat/server/core/ClientHandler.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Code/src/main/resources/MainChatView.fxml" beforeDir="false" afterPath="$PROJECT_DIR$/Code/src/main/resources/MainChatView.fxml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Code/src/main/resources/client.properties" beforeDir="false" afterPath="$PROJECT_DIR$/Code/src/main/resources/client.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Code/src/test/java/com/chat/test/PacketFramerTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/Code/src/test/java/com/chat/test/PacketFramerTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/PROTOCOL_SPEC.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/PROTOCOL_SPEC.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/REPORT_DRAFT.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/REPORT_DRAFT.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/TEST_PLAN_PHASE1.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/TEST_PLAN_PHASE1.md" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -139,35 +168,35 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;Application.ServerApp.executor&quot;: &quot;Run&quot;,
-    &quot;Application.TestClient.executor&quot;: &quot;Run&quot;,
-    &quot;Application.TestRoutingClients.executor&quot;: &quot;Run&quot;,
-    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.MCP Project settings loaded&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
-    &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
-    &quot;com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1&quot;: &quot;true&quot;,
-    &quot;copilot.chat.legacySessionMetadata.migrated&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
-    &quot;ignore.preview.features.used&quot;: &quot;true&quot;,
-    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
-    &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
-    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;D:/laptrinhmang&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;python.packages.toolwindow.project.migrated.to.right.top.v2&quot;: &quot;true&quot;,
-    &quot;to.speed.mode.migration.done&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Application.ServerApp.executor": "Run",
+    "Application.TestClient.executor": "Run",
+    "Application.TestRoutingClients.executor": "Run",
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.MCP Project settings loaded": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "codeWithMe.voiceChat.enabledByDefault": "false",
+    "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
+    "copilot.chat.legacySessionMetadata.migrated": "true",
+    "git-widget-placeholder": "Merging main",
+    "ignore.preview.features.used": "true",
+    "ignore.virus.scanning.warn.message": "true",
+    "junie.onboarding.icon.badge.shown": "true",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "D:/laptrinhmang",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "python.packages.toolwindow.project.migrated.to.right.top.v2": "true",
+    "to.speed.mode.migration.done": "true"
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
       <recent name="C:\Users\htuan\IdeaProjects\laptrinhmang" />
