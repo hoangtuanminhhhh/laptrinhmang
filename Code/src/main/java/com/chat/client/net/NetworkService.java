@@ -20,6 +20,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Dịch vụ quản lý kết nối TCP và các hàm gọi mạng phía Client (Thành viên 3).
@@ -59,13 +60,26 @@ public class NetworkService {
     private volatile ServerListener serverListener;
     private volatile Thread listenerThread;
     private volatile HeartbeatService heartbeatService;
+    private final ReconnectManager reconnectManager = new ReconnectManager(this);
 
     private final AtomicBoolean connected = new AtomicBoolean(false);
     private final AtomicBoolean connecting = new AtomicBoolean(false);
     private final AtomicBoolean networkLost = new AtomicBoolean(false);
+    private final AtomicLong connectGeneration = new AtomicLong(0);
+
+    // true khi người dùng chủ động ngắt kết nối hoặc tắt ứng dụng -> không kích hoạt Auto-reconnect
+    private volatile boolean manualDisconnect = false;
+
+    // Thông số kết nối thành công gần nhất (dùng cho Auto-reconnect)
+    private volatile String lastIp;
+    private volatile int lastPort;
+    private volatile int lastTimeoutMs;
 
     // Username của phiên đăng nhập hiện tại (dùng làm trường "sender" cho các gói tin gửi đi)
     private volatile String currentUsername = GUEST_USER;
+
+    // Mật khẩu tạm giữ trong RAM để tự đăng nhập lại sau khi Auto-reconnect; xóa khi logout/disconnect
+    private volatile String lastPassword;
 
     // Cấu hình mặc định nạp từ client.properties
     private String defaultIp = "127.0.0.1";
@@ -106,6 +120,16 @@ public class NetworkService {
                         String.valueOf(HeartbeatService.DEFAULT_INTERVAL_MS)).trim());
                 heartbeatMaxMissed = Integer.parseInt(props.getProperty("heartbeat.max.missed",
                         String.valueOf(HeartbeatService.DEFAULT_MAX_MISSED)).trim());
+                reconnectManager.configure(
+                        Boolean.parseBoolean(props.getProperty("reconnect.enabled",
+                                String.valueOf(ReconnectManager.DEFAULT_ENABLED)).trim()),
+                        Long.parseLong(props.getProperty("reconnect.initial.delay",
+                                String.valueOf(ReconnectManager.DEFAULT_INITIAL_DELAY_MS)).trim()),
+                        Long.parseLong(props.getProperty("reconnect.max.delay",
+                                String.valueOf(ReconnectManager.DEFAULT_MAX_DELAY_MS)).trim()),
+                        Integer.parseInt(props.getProperty("reconnect.max.attempts",
+                                String.valueOf(ReconnectManager.DEFAULT_MAX_ATTEMPTS)).trim())
+                );
             }
         } catch (Exception e) {
             System.err.println("[NetworkService] Không thể đọc client.properties, sử dụng cấu hình mặc định: " + e.getMessage());
@@ -168,77 +192,141 @@ public class NetworkService {
             return;
         }
 
+        final long gen = connectGeneration.incrementAndGet();
+        reconnectManager.cancel();
+        manualDisconnect = false;
         notifyConnecting(ip, port);
 
         ioExecutor.submit(() -> {
             if (isConnected()) {
-                handleConnectionClosed();
+                handleConnectionClosed(false);
             }
-            Socket newSocket = null;
-            try {
-                if (isBlank(ip)) {
-                    throw new UnknownHostException("Địa chỉ IP không được để trống.");
-                }
-                if (port < 1 || port > 65535) {
-                    throw new IllegalArgumentException("Số cổng (Port) phải nằm trong khoảng từ 1 đến 65535.");
-                }
-
-                newSocket = new Socket();
-                newSocket.connect(new InetSocketAddress(ip.trim(), port), Math.max(timeoutMs, 1000));
-                newSocket.setKeepAlive(true);
-                newSocket.setTcpNoDelay(true);
-
-                DataInputStream in = new DataInputStream(newSocket.getInputStream());
-                DataOutputStream out = new DataOutputStream(newSocket.getOutputStream());
-
-                synchronized (this) {
-                    this.socket = newSocket;
-                    this.inputStream = in;
-                    this.outputStream = out;
-                    connected.set(true);
-                    connecting.set(false);
-                    networkLost.set(false);
-                }
-
-                notifyConnected();
-
-                synchronized (this) {
-                    if (!connected.get()) {
-                        return;
-                    }
-                    serverListener = new ServerListener(in, this);
-                    listenerThread = new Thread(serverListener, "Server-Packet-Listener");
-                    listenerThread.setDaemon(true);
-                    listenerThread.start();
-
-                    heartbeatService = new HeartbeatService(heartbeatIntervalMs, heartbeatMaxMissed,
-                            this::sendPing, this::onHeartbeatTimeout);
-                    heartbeatService.start();
-                }
-
-            } catch (IllegalArgumentException e) {
-                handleConnectFailure(newSocket, e.getMessage(), e);
-            } catch (UnknownHostException e) {
-                handleConnectFailure(newSocket, "Không tìm thấy địa chỉ máy chủ '" + ip + "'. Vui lòng kiểm tra lại IP/Tên miền.", e);
-            } catch (SocketTimeoutException e) {
-                handleConnectFailure(newSocket, "Hết thời gian chờ kết nối (" + timeoutMs + "ms) tới " + ip + ":" + port + ". Kiểm tra lại IP hoặc tường lửa.", e);
-            } catch (ConnectException e) {
-                handleConnectFailure(newSocket, "Máy chủ " + ip + ":" + port + " từ chối kết nối (Server có thể chưa bật hoặc sai Port).", e);
-            } catch (IOException e) {
-                handleConnectFailure(newSocket, "Lỗi mạng khi kết nối tới máy chủ: " + e.getMessage(), e);
-            }
+            establishConnection(ip, port, timeoutMs, true, gen);
         });
     }
 
-    private void handleConnectFailure(Socket failedSocket, String message, Throwable cause) {
+    boolean establishConnection(String ip, int port, int timeoutMs, boolean reportErrors, long expectedGen) {
+        connecting.set(true);
+        Socket newSocket = null;
+        try {
+            if (isBlank(ip)) {
+                throw new UnknownHostException("Địa chỉ IP không được để trống.");
+            }
+            if (port < 1 || port > 65535) {
+                throw new IllegalArgumentException("Số cổng (Port) phải nằm trong khoảng từ 1 đến 65535.");
+            }
+
+            String trimmedIp = ip.trim();
+            newSocket = new Socket();
+            newSocket.connect(new InetSocketAddress(trimmedIp, port), Math.max(timeoutMs, 1000));
+            newSocket.setKeepAlive(true);
+            newSocket.setTcpNoDelay(true);
+
+            DataInputStream in = new DataInputStream(newSocket.getInputStream());
+            DataOutputStream out = new DataOutputStream(newSocket.getOutputStream());
+
+            synchronized (this) {
+                if (expectedGen != connectGeneration.get() || manualDisconnect) {
+                    closeSocketQuietly(newSocket);
+                    connecting.set(false);
+                    return false;
+                }
+                this.socket = newSocket;
+                this.inputStream = in;
+                this.outputStream = out;
+
+                this.lastIp = trimmedIp;
+                this.lastPort = port;
+                this.lastTimeoutMs = timeoutMs;
+
+                connected.set(true);
+                connecting.set(false);
+                networkLost.set(false);
+            }
+
+            notifyConnected();
+
+            synchronized (this) {
+                if (expectedGen != connectGeneration.get() || !connected.get()) {
+                    return false;
+                }
+                serverListener = new ServerListener(in, this);
+                listenerThread = new Thread(serverListener, "Server-Packet-Listener");
+                listenerThread.setDaemon(true);
+                listenerThread.start();
+
+                heartbeatService = new HeartbeatService(heartbeatIntervalMs, heartbeatMaxMissed,
+                        this::sendPing, this::onHeartbeatTimeout);
+                heartbeatService.start();
+            }
+            return true;
+
+        } catch (IllegalArgumentException e) {
+            handleConnectFailure(newSocket, reportErrors, e.getMessage(), e);
+        } catch (UnknownHostException e) {
+            handleConnectFailure(newSocket, reportErrors,
+                    "Không tìm thấy địa chỉ máy chủ '" + ip + "'. Vui lòng kiểm tra lại IP/Tên miền.", e);
+        } catch (SocketTimeoutException e) {
+            handleConnectFailure(newSocket, reportErrors,
+                    "Hết thời gian chờ kết nối (" + timeoutMs + "ms) tới " + ip + ":" + port + ". Kiểm tra lại IP hoặc tường lửa.", e);
+        } catch (ConnectException e) {
+            handleConnectFailure(newSocket, reportErrors,
+                    "Máy chủ " + ip + ":" + port + " từ chối kết nối (Server có thể chưa bật hoặc sai Port).", e);
+        } catch (IOException e) {
+            handleConnectFailure(newSocket, reportErrors,
+                    "Lỗi mạng khi kết nối tới máy chủ: " + e.getMessage(), e);
+        }
+        return false;
+    }
+
+    private void handleConnectFailure(Socket failedSocket, boolean reportErrors, String message, Throwable cause) {
         connecting.set(false);
-        if (failedSocket != null) {
+        closeSocketQuietly(failedSocket);
+        if (reportErrors) {
+            notifyError(message, cause);
+        }
+    }
+
+    private static void closeSocketQuietly(Socket s) {
+        if (s != null) {
             try {
-                failedSocket.close();
+                s.close();
             } catch (IOException ignored) {}
         }
-        closeResourcesSilently();
-        notifyError(message, cause);
+    }
+
+    // =========================================================================
+    // TỰ ĐỘNG KẾT NỐI LẠI (AUTO-RECONNECT)
+    // =========================================================================
+
+    public void configureReconnect(boolean enabled, long initialDelayMs, long maxDelayMs, int maxAttempts) {
+        reconnectManager.configure(enabled, initialDelayMs, maxDelayMs, maxAttempts);
+    }
+
+    boolean reconnectNow() {
+        if (manualDisconnect || lastIp == null) {
+            return true;
+        }
+        if (isConnected()) {
+            return true;
+        }
+        long gen = connectGeneration.get();
+        boolean ok = establishConnection(lastIp, lastPort, lastTimeoutMs, false, gen);
+        if (ok) {
+            notifyReconnected();
+            String user = this.currentUsername;
+            String pass = this.lastPassword;
+            if (pass != null && !GUEST_USER.equals(user)) {
+                sendLogin(user, pass);
+            }
+        }
+        return ok;
+    }
+
+    void startReconnectIfNeeded() {
+        if (!manualDisconnect && lastIp != null && !isConnected()) {
+            reconnectManager.start();
+        }
     }
 
     // =========================================================================
@@ -268,7 +356,7 @@ public class NetworkService {
                     out.flush();
                 } catch (IOException e) {
                     notifyError("Không thể gửi dữ liệu tới máy chủ: " + e.getMessage(), e);
-                    handleConnectionClosed();
+                    handleConnectionClosed(true);
                 } catch (RuntimeException e) {
                     notifyError("Gói tin không hợp lệ, không thể gửi: " + e.getMessage(), e);
                 }
@@ -303,6 +391,7 @@ public class NetworkService {
             return null;
         }
         currentUsername = username.trim();
+        lastPassword = password;
         Packet packet = new Packet(PacketType.LOGIN_REQUEST, currentUsername, SERVER_ID)
                 .addPayload("username", currentUsername)
                 .addPayload("password", password);
@@ -354,6 +443,7 @@ public class NetworkService {
                     .addPayload("username", currentUsername);
             sendPacket(packet);
         }
+        lastPassword = null;
         currentUsername = GUEST_USER;
     }
 
@@ -562,17 +652,11 @@ public class NetworkService {
         networkLost.set(true);
         notifyError("Mất kết nối tới máy chủ (quá " + heartbeatMaxMissed + " chu kỳ Heartbeat không nhận được phản hồi PONG).", null);
         notifyConnectionLost();
-        handleConnectionClosed();
+        handleConnectionClosed(true);
     }
 
-    /**
-     * Được ServerListener gọi khi luồng đọc kết thúc.
-     * Chỉ dọn dẹp kết nối nếu listener vừa dừng vẫn là listener hiện hành (tránh race condition khi nối lại).
-     */
-    synchronized void onListenerStopped(ServerListener stoppedListener) {
-        if (stoppedListener == this.serverListener) {
-            handleConnectionClosed();
-        }
+    void onListenerStopped(ServerListener stoppedListener) {
+        closeConnectionIf(stoppedListener, true);
     }
 
     private static boolean isBlank(String s) {
@@ -583,39 +667,50 @@ public class NetworkService {
     // NGẮT KẾT NỐI & DỌN DẸP TÀI NGUYÊN
     // =========================================================================
 
-    /**
-     * Chủ động ngắt kết nối khỏi Server (chạy bất đồng bộ để không block UI).
-     */
     public void disconnect() {
-        ioExecutor.submit(this::handleConnectionClosed);
+        manualDisconnect = true;
+        connectGeneration.incrementAndGet();
+        lastPassword = null;
+        connecting.set(false);
+        reconnectManager.cancel();
+        ioExecutor.submit(() -> handleConnectionClosed(false));
     }
 
-    /**
-     * Xử lý đóng Socket/Stream và phát sự kiện onDisconnected() (chỉ phát 1 lần).
-     */
-    synchronized void handleConnectionClosed() {
-        boolean wasConnected = connected.getAndSet(false);
-        connecting.set(false);
+    void handleConnectionClosed(boolean allowReconnect) {
+        closeConnectionIf(null, allowReconnect);
+    }
 
-        if (heartbeatService != null) {
-            heartbeatService.stop();
-            heartbeatService = null;
+    private void closeConnectionIf(ServerListener expectedListener, boolean allowReconnect) {
+        boolean wasConnected;
+        synchronized (this) {
+            if (expectedListener != null && expectedListener != this.serverListener) {
+                return;
+            }
+            wasConnected = connected.getAndSet(false);
+
+            if (heartbeatService != null) {
+                heartbeatService.stop();
+                heartbeatService = null;
+            }
+
+            if (serverListener != null) {
+                serverListener.stop();
+                serverListener = null;
+            }
+
+            if (listenerThread != null && listenerThread != Thread.currentThread()) {
+                listenerThread.interrupt();
+                listenerThread = null;
+            }
+
+            closeResourcesSilently();
         }
-
-        if (serverListener != null) {
-            serverListener.stop();
-            serverListener = null;
-        }
-
-        if (listenerThread != null && listenerThread != Thread.currentThread()) {
-            listenerThread.interrupt();
-            listenerThread = null;
-        }
-
-        closeResourcesSilently();
 
         if (wasConnected) {
             notifyDisconnected();
+            if (allowReconnect) {
+                startReconnectIfNeeded();
+            }
         }
     }
 
@@ -635,11 +730,13 @@ public class NetworkService {
         socket = null;
     }
 
-    /**
-     * Gọi khi đóng hoàn toàn ứng dụng Client (trong hàm stop() của ClientApp JavaFX).
-     */
     public void shutdown() {
-        handleConnectionClosed();
+        manualDisconnect = true;
+        connectGeneration.incrementAndGet();
+        lastPassword = null;
+        connecting.set(false);
+        reconnectManager.shutdown();
+        handleConnectionClosed(false);
         ioExecutor.shutdownNow();
     }
 
@@ -671,6 +768,24 @@ public class NetworkService {
         }
     }
 
+    void notifyReconnecting(int attempt, long delayMs) {
+        for (NetworkEventListener listener : listeners) {
+            listener.onReconnecting(attempt, delayMs);
+        }
+    }
+
+    void notifyReconnected() {
+        for (NetworkEventListener listener : listeners) {
+            listener.onReconnected();
+        }
+    }
+
+    void notifyReconnectGaveUp() {
+        for (NetworkEventListener listener : listeners) {
+            listener.onReconnectGaveUp();
+        }
+    }
+
     void notifyPacketReceived(Packet packet) {
         for (NetworkEventListener listener : listeners) {
             listener.onPacketReceived(packet);
@@ -698,6 +813,10 @@ public class NetworkService {
 
     public boolean isNetworkLost() {
         return networkLost.get();
+    }
+
+    public boolean isReconnecting() {
+        return reconnectManager.isActive();
     }
 
     public HeartbeatService getHeartbeatService() {

@@ -41,6 +41,32 @@ public interface NetworkEventListener {
     }
 
     /**
+     * Được gọi trước mỗi lần thử tự động kết nối lại (Auto-reconnect).
+     * Giúp UI hiển thị Đèn ĐỎ: "Mất kết nối tới Server. Đang thử kết nối lại... (Lần #attempt)".
+     *
+     * @param attempt Thứ tự lần thử kết nối lại (bắt đầu từ 1)
+     * @param delayMs Thời gian chờ trước lần thử này (ms, tăng dần theo exponential backoff)
+     */
+    default void onReconnecting(int attempt, long delayMs) {
+        // Mặc định không bắt buộc override
+    }
+
+    /**
+     * Được gọi ngay khi tiến trình Auto-reconnect kết nối lại thành công với Server.
+     * Giúp UI khôi phục thanh trạng thái sang màu XANH.
+     */
+    default void onReconnected() {
+        // Mặc định không bắt buộc override
+    }
+
+    /**
+     * Được gọi khi đã thử kết nối lại tối đa số lần quy định mà Server vẫn không phản hồi.
+     */
+    default void onReconnectGaveUp() {
+        // Mặc định không bắt buộc override
+    }
+
+    /**
      * Được gọi khi nhận được một gói tin hoàn chỉnh từ Server.
      *
      * @param packet Gói tin đã được giải mã qua PacketFramer
