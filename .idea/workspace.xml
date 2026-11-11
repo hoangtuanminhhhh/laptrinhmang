@@ -4,17 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="cf7f9b44-2060-4b5a-b55b-0371b9b1026e" name="Changes" comment="xóa file trùng">
-      <change afterPath="$PROJECT_DIR$/Code/src/main/java/com/chat/server/core/ConnectionManager.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Code/src/main/java/com/chat/server/core/MessageRouter.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Code/src/main/java/com/chat/common/protocol/Packet.java" beforeDir="false" afterPath="$PROJECT_DIR$/Code/src/main/java/com/chat/common/protocol/Packet.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Code/src/main/java/com/chat/common/protocol/PacketFramer.java" beforeDir="false" afterPath="$PROJECT_DIR$/Code/src/main/java/com/chat/common/protocol/PacketFramer.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Code/src/main/java/com/chat/common/protocol/PacketType.java" beforeDir="false" afterPath="$PROJECT_DIR$/Code/src/main/java/com/chat/common/protocol/PacketType.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Code/src/main/java/com/chat/server/core/ClientHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/Code/src/main/java/com/chat/server/core/ClientHandler.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/TEST_PLAN_PHASE1.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/TEST_PLAN_PHASE1.md" afterDir="false" />
-    </list>
+    <list default="true" id="cf7f9b44-2060-4b5a-b55b-0371b9b1026e" name="Changes" comment="xóa file trùng" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
