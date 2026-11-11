@@ -21,6 +21,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
 
 /**
  * Dịch vụ quản lý kết nối TCP và các hàm gọi mạng phía Client (Thành viên 3).
@@ -141,13 +142,37 @@ public class NetworkService {
     // =========================================================================
 
     public void addEventListener(NetworkEventListener listener) {
-        if (listener != null && !listeners.contains(listener)) {
-            listeners.add(listener);
+        if (listener == null) {
+            return;
+        }
+        for (NetworkEventListener existing : listeners) {
+            if (existing == listener) {
+                return;
+            }
+        }
+        listeners.add(listener);
+    }
+
+    /**
+     * Đăng ký listener UI an toàn luồng: mọi callback tự động chạy trên JavaFX Thread
+     * thông qua {@link javafx.application.Platform#runLater(Runnable)}.
+     */
+    public void addUiEventListener(NetworkEventListener uiListener) {
+        if (uiListener == null) {
+            return;
+        }
+        NetworkEventListener wrapped = NetworkEventListener.onFxThread(uiListener);
+        if (!containsListenerOrDelegate(uiListener)) {
+            listeners.add(wrapped);
         }
     }
 
     public void removeEventListener(NetworkEventListener listener) {
-        listeners.remove(listener);
+        if (listener == null) {
+            return;
+        }
+        listeners.removeIf(item -> item == listener
+                || (item instanceof FxNetworkEventListener fx && fx.getDelegate() == listener));
     }
 
     /**
@@ -158,6 +183,28 @@ public class NetworkService {
         if (listener != null) {
             listeners.add(listener);
         }
+    }
+
+    /**
+     * Thay thế toàn bộ listener bằng một listener UI duy nhất tự động chạy trên JavaFX Thread.
+     */
+    public void setUiEventListener(NetworkEventListener uiListener) {
+        listeners.clear();
+        if (uiListener != null) {
+            listeners.add(NetworkEventListener.onFxThread(uiListener));
+        }
+    }
+
+    private boolean containsListenerOrDelegate(NetworkEventListener target) {
+        for (NetworkEventListener existing : listeners) {
+            if (existing == target) {
+                return true;
+            }
+            if (existing instanceof FxNetworkEventListener fx && fx.getDelegate() == target) {
+                return true;
+            }
+        }
+        return false;
     }
 
     // =========================================================================
@@ -744,58 +791,51 @@ public class NetworkService {
     // ĐIỀU PHỐI SỰ KIỆN TỚI CÁC LISTENER
     // =========================================================================
 
-    void notifyConnecting(String ip, int port) {
+    private void dispatchEvent(Consumer<NetworkEventListener> dispatcher) {
         for (NetworkEventListener listener : listeners) {
-            listener.onConnecting(ip, port);
+            try {
+                dispatcher.accept(listener);
+            } catch (RuntimeException e) {
+                System.err.println("[NetworkService] Listener " + listener.getClass().getSimpleName()
+                        + " ném ngoại lệ: " + e.getMessage());
+            }
         }
+    }
+
+    void notifyConnecting(String ip, int port) {
+        dispatchEvent(l -> l.onConnecting(ip, port));
     }
 
     void notifyConnected() {
-        for (NetworkEventListener listener : listeners) {
-            listener.onConnected();
-        }
+        dispatchEvent(NetworkEventListener::onConnected);
     }
 
     void notifyDisconnected() {
-        for (NetworkEventListener listener : listeners) {
-            listener.onDisconnected();
-        }
+        dispatchEvent(NetworkEventListener::onDisconnected);
     }
 
     void notifyConnectionLost() {
-        for (NetworkEventListener listener : listeners) {
-            listener.onConnectionLost();
-        }
+        dispatchEvent(NetworkEventListener::onConnectionLost);
     }
 
     void notifyReconnecting(int attempt, long delayMs) {
-        for (NetworkEventListener listener : listeners) {
-            listener.onReconnecting(attempt, delayMs);
-        }
+        dispatchEvent(l -> l.onReconnecting(attempt, delayMs));
     }
 
     void notifyReconnected() {
-        for (NetworkEventListener listener : listeners) {
-            listener.onReconnected();
-        }
+        dispatchEvent(NetworkEventListener::onReconnected);
     }
 
     void notifyReconnectGaveUp() {
-        for (NetworkEventListener listener : listeners) {
-            listener.onReconnectGaveUp();
-        }
+        dispatchEvent(NetworkEventListener::onReconnectGaveUp);
     }
 
     void notifyPacketReceived(Packet packet) {
-        for (NetworkEventListener listener : listeners) {
-            listener.onPacketReceived(packet);
-        }
+        dispatchEvent(l -> l.onPacketReceived(packet));
     }
 
     void notifyError(String friendlyMessage, Throwable exception) {
-        for (NetworkEventListener listener : listeners) {
-            listener.onError(friendlyMessage, exception);
-        }
+        dispatchEvent(l -> l.onError(friendlyMessage, exception));
     }
 
     // =========================================================================

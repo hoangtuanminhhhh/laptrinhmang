@@ -3,11 +3,31 @@ package com.chat.client.net;
 import com.chat.common.protocol.Packet;
 
 /**
- * Interface định nghĩa các sự kiện mạng trả về cho tầng giao diện (UI).
- * Lưu ý cho TV4 (UI): Các hàm callback này được gọi từ Worker Thread,
- * khi cập nhật giao diện JavaFX cần bọc trong Platform.runLater(() -> { ... }).
+ * Interface định nghĩa các sự kiện mạng trả về cho tầng giao diện (UI) (Thành viên 3).
+ * Lưu ý cho TV4 (UI): Các hàm callback mặc định được gọi từ Worker Thread,
+ * khi cập nhật giao diện JavaFX phải đẩy về JavaFX Application Thread bằng
+ * {@code Platform.runLater(() -> { ... })} hoặc đăng ký qua helper {@link #onFxThread(NetworkEventListener)}:
+ * <pre>{@code
+ * NetworkService.getInstance().setUiEventListener(this);
+ * // hoặc:
+ * NetworkService.getInstance().setEventListener(NetworkEventListener.onFxThread(this));
+ * }</pre>
  */
 public interface NetworkEventListener {
+
+    /**
+     * Bọc một listener để toàn bộ callback của nó được tự động chuyển sang JavaFX Application Thread
+     * thông qua {@code Platform.runLater(...)} mà vẫn giữ đúng thứ tự FIFO.
+     *
+     * @param listener listener gốc cần chạy trên UI Thread
+     * @return listener an toàn luồng (không bọc lặp nếu đã là {@link FxNetworkEventListener})
+     */
+    static NetworkEventListener onFxThread(NetworkEventListener listener) {
+        if (listener == null || listener instanceof FxNetworkEventListener) {
+            return listener;
+        }
+        return new FxNetworkEventListener(listener);
+    }
 
     /**
      * Được gọi ngay khi bắt đầu tiến trình kết nối tới Server.
