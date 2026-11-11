@@ -1,13 +1,13 @@
 # ĐẶC TẢ GIAO THỨC TRUYỀN THÔNG MẠNG (PROTOCOL SPECIFICATION)
 ## Dự án: UDM_08 — Chat TCP Client–Server
-**Phiên bản:** 1.0 (Phase 1) | **Tác giả phụ trách:** Thành viên 6 (QA & Architecture Documentation)
+
 
 ---
 
 ## 1. TỔNG QUAN VÀ NGUYÊN LÝ THIẾT KẾ
 
 ### 1.1. Phạm vi áp dụng
-Tài liệu này quy định cấu trúc gói tin, phương thức đóng khung nhị phân (Framing) và chuẩn giao tiếp JSON qua socket TCP giữa **Chat Client** và **Chat Server**. Mọi thành viên trong nhóm (đặc biệt là TV1 - Server Core, TV2 - Model & Config, TV3 - Client Network, TV4 - UI) phải tuân thủ nghiêm ngặt đặc tả này để đảm bảo tính tương thích và không phát sinh lỗi đồng bộ.
+Tài liệu này mô tả thiết kế cấu trúc gói tin, phương thức đóng khung nhị phân (Framing) và giao tiếp JSON dự kiến giữa **Chat Client** và **Chat Server** qua socket TCP. Các loại gói ngoài Echo là đặc tả mục tiêu, chưa đồng nghĩa đã được triển khai hoặc kiểm chứng trong ứng dụng.
 
 ### 1.2. Giải pháp chống Dính gói (Sticky Packets) và Xé gói (Fragmented Packets)
 Giao thức tầng giao vận TCP là hướng dòng byte (byte-stream), không có khái niệm "ranh giới tin nhắn" (message boundary). Do đó, một lần đọc `InputStream.read()` có thể nhận:
@@ -17,7 +17,7 @@ Giao thức tầng giao vận TCP là hướng dòng byte (byte-stream), không 
 **Giải pháp:** Áp dụng kỹ thuật **Length-Prefixed Framing**:
 - Mỗi gói tin bắt đầu bằng đúng **4 byte nguyên có dấu (32-bit signed integer)** theo thứ tự byte chuẩn mạng **Big-Endian**, biểu thị số byte của phần dữ liệu JSON Payload đi kèm.
 - Kế tiếp 4 byte header là đúng $N$ byte nhị phân được mã hóa theo chuẩn **UTF-8** của chuỗi JSON.
-- Phía đọc dữ liệu **bắt buộc** phải sử dụng phương thức `DataInputStream.readFully(byte[] b, int off, int len)` để bảo đảm đọc đủ $N$ byte trước khi tiến hành parse JSON.
+- Phía đọc dữ liệu phải đọc đủ $N$ byte trước khi tiến hành parse JSON; cách triển khai hiện tại trong `PacketFramer` dùng `DataInputStream.readFully`.
 
 ---
 
@@ -37,14 +37,14 @@ Giao thức tầng giao vận TCP là hướng dòng byte (byte-stream), không 
 ```
 
 ### Giới hạn kỹ thuật:
-- **Kích thước tối thiểu của Payload:** $2$ bytes (chuỗi JSON rỗng `{}`).
-- **Kích thước tối đa của Payload:** $10.485.760$ bytes ($10$ MB) nhằm ngăn chặn tấn công từ chối dịch vụ (DoS) hoặc tràn bộ nhớ Heap (`OutOfMemoryError`). Nếu `Length > 10MB` hoặc `Length < 0`, ngắt kết nối socket ngay lập tức.
+- **Kích thước tối thiểu theo ví dụ JSON:** $2$ bytes (chuỗi JSON rỗng `{}`); giá trị thực tế phụ thuộc nội dung gói.
+- **Kích thước tối đa trong `PacketFramer` hiện tại:** $10.485.760$ bytes ($10$ MiB). Độ dài âm hoặc vượt giới hạn bị từ chối bằng `IOException`; caller chịu trách nhiệm xử lý lỗi và đóng kết nối nếu cần.
 
 ---
 
 ## 3. KHUNG DỮ LIỆU JSON TỔNG QUÁT (ENVELOPE SCHEMA)
 
-Mọi gói tin sau khi bóc tách 4-byte header đều có định dạng chuẩn JSON Envelope như sau:
+Theo thiết kế, gói tin sau khi bóc tách 4-byte header có định dạng JSON Envelope như sau:
 
 ```json
 {
@@ -62,12 +62,12 @@ Mọi gói tin sau khi bóc tách 4-byte header đều có định dạng chuẩ
 ### Ý nghĩa các trường chung:
 | Trường | Kiểu dữ liệu | Bắt buộc | Mô tả |
 |:---|:---|:---:|:---|
-| `type` | String (Enum) | Có | Định danh loại gói tin (xem mục 4). |
+| `type` | String (Enum) | Theo loại gói | Định danh loại gói tin (xem mục 4). |
 | `requestId` | String | Không | UUID định danh yêu cầu, dùng để map request với response tương ứng. |
-| `sender` | String | Có | Username của người gửi (hoặc `"SERVER"` nếu là tin từ máy chủ). |
-| `receiver` | String | Có | Username người nhận, `"ALL"` nếu broadcast, hoặc `"SERVER"`. |
-| `timestamp` | Long | Có | Thời gian tạo gói (Unix Epoch timestamp tính bằng milliseconds). |
-| `payload` | Object | Có | Đối tượng JSON chứa tham số chi tiết của từng loại nghiệp vụ. |
+| `sender` | String | Theo loại gói | Username của người gửi (hoặc `"SERVER"` nếu là tin từ máy chủ). |
+| `receiver` | String | Theo loại gói | Username người nhận, `"ALL"` nếu broadcast, hoặc `"SERVER"`. |
+| `timestamp` | Long | Theo loại gói | Thời gian tạo gói (Unix Epoch timestamp tính bằng milliseconds). |
+| `payload` | Object | Theo loại gói | Đối tượng JSON chứa tham số chi tiết của từng loại nghiệp vụ. |
 
 ---
 
@@ -257,7 +257,7 @@ Sử dụng trong Phase 1 để kiểm tra kết nối mạng, đo lường đ�
 ---
 
 ### 4.6. `PING` & `PONG` (Heartbeat giữ kết nối)
-Client định kỳ gửi `PING` mỗi 15 giây. Server phản hồi ngay lập tức `PONG`. Nếu quá 30 giây Server không nhận được gói tin nào từ Client thì tự động giải phóng kết nối socket.
+Theo thiết kế dự kiến, Client gửi `PING` mỗi 15 giây và Server phản hồi `PONG`. Mã nguồn hiện tại chưa triển khai heartbeat định kỳ phía Client hoặc xử lý `PING`/`PONG` tương ứng trên Server.
 
 #### Ping:
 ```json
@@ -302,11 +302,11 @@ Client định kỳ gửi `PING` mỗi 15 giây. Server phản hồi ngay lập 
 
 ---
 
-## 5. BẢNG MÃ LỖI CHUẨN (STANDARD ERROR CODES)
+## 5. BẢNG MÃ LỖI DỰ KIẾN (PLANNED ERROR CODES)
 
 | Mã lỗi | Tên định danh | Ý nghĩa & Hướng xử lý |
 |:---|:---|:---|
-| `ERR_001` | `ERR_MALFORMED_PACKET` | Gói tin sai cấu trúc framing, độ dài vượt quá giới hạn 10MB hoặc JSON không parse được. |
+| `ERR_001` | `ERR_MALFORMED_PACKET` | Dự kiến dùng cho gói sai framing hoặc JSON không parse được; `PacketFramer` hiện ném `IOException` khi độ dài không hợp lệ. |
 | `ERR_002` | `ERR_UNAUTHENTICATED` | Client thực hiện gửi tin trước khi hoàn tất đăng nhập/bắt tay. |
 | `ERR_003` | `ERR_USER_OFFLINE` | Người nhận mục tiêu không có trong danh sách kết nối online của Server. |
 | `ERR_004` | `ERR_USER_EXISTS` | Tên đăng nhập đã được đăng ký hoặc đã có phiên đang online. |
@@ -323,14 +323,14 @@ Client                                      Server
   |--- 1. TCP 3-Way Handshake (Socket SYN) --->|
   |<-- 2. TCP Handshake ACK -------------------|
   |                                            |
-  |--- 3. [Length][CONNECT_REQUEST JSON] ----->|
-  |<-- 4. [Length][CONNECT_RESPONSE JSON] -----|
+  |--- 3. [Length][CONNECT_REQUEST JSON] ----->| (Theo thiết kế; chưa được xử lý trong Server)
+  |<-- 4. [Length][CONNECT_RESPONSE JSON] -----| (Theo thiết kế; chưa được xử lý trong Server)
   |                                            |
   |--- 5. [Length][ECHO_REQUEST JSON] -------->| (Kiểm thử Phase 1)
   |<-- 6. [Length][ECHO_RESPONSE JSON] --------|
   |                                            |
-  |--- 7. [Length][PING JSON] ---------------->| (Mỗi 15 giây)
-  |<-- 8. [Length][PONG JSON] -----------------|
+  |--- 7. [Length][PING JSON] ---------------->| (Theo thiết kế; chưa có heartbeat định kỳ)
+  |<-- 8. [Length][PONG JSON] -----------------| (Theo thiết kế)
   |                                            |
   |--- 9. Socket Close / Disconnect ---------->|
   |    (Server dọn dẹp Thread, giải phóng IP)  |

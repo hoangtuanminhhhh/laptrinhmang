@@ -28,7 +28,7 @@
   - 3.1. Kiến trúc tổng thể hệ thống (System Architecture)
   - 3.2. Thiết kế giao thức mạng đóng khung nhị phân (Length-Prefixed Framing)
   - 3.3. Định dạng dữ liệu và các loại thông điệp (Message Types)
-  - 3.4. Thiết kế cơ sở dữ liệu (Database Schema: `users`, `messages`)
+  - 3.4. Thiết kế cơ sở dữ liệu (Database Schema: `users`, `messages`, `offline_queue`, `contacts`)
   - 3.5. Thiết kế luồng xử lý (Sequence Diagrams: Bắt tay, Gửi tin, Reply, Forward)
 - **CHƯƠNG 4: HIỆN THỰC KỸ THUẬT VÀ CÁC MODULE CHỨC NĂNG**
   - 4.1. Module Server Core & Quản lý kết nối (TV1)
@@ -97,11 +97,11 @@ _(Mô tả chi tiết mã nguồn, class diagram và vai trò từng thành viê
 
 ### CHƯƠNG 5: KIỂM THỬ, ĐÁNH GIÁ VÀ KẾT QUẢ THỰC NGHIỆM
 
-_(Trình bày kết quả thực thi các test cases từ `docs/TEST_PLAN_PHASE1.md`, đính kèm ảnh chụp màn hình kiểm thử thành công, biểu đồ đo đạc thời gian phản hồi Echo latency dưới 15ms trong mạng nội bộ)._
+_(Trình bày kết quả thực thi các test cases từ `docs/TEST_PLAN_PHASE1.md`, đính kèm ảnh chụp màn hình và số liệu latency đo được. Chỉ nêu ngưỡng hoặc kết quả hiệu năng khi đã có bằng chứng đo thực tế)._
 
 ---
 
 ### CHƯƠNG 6: KẾT LUẬN VÀ HƯỚNG PHÁT TRIỂN
 
-- **Kết quả:** Đã làm chủ hoàn toàn cơ chế giao tiếp Socket TCP, giải quyết triệt để dính gói/xé gói, giao diện JavaFX hiện đại, mượt mà và trực quan.
+- **Kết quả:** Repository hiện có các thành phần giao tiếp Socket TCP, framing, giao diện JavaFX và test framing. Cần bổ sung kết quả build, kiểm thử và bằng chứng thực tế trước khi kết luận về độ ổn định hoặc hiệu năng.
 - **Hướng tới:** Nâng cấp cơ chế mã hóa SSL/TLS, tích hợp truyền file media lớn và cuộc gọi thoại trong các giai đoạn tiếp theo.
