@@ -1,6 +1,5 @@
 package com.chat.common.protocol;
 
-<<<<<<< HEAD
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -38,6 +37,9 @@ public class Packet {
         this.sender = sender;
         this.receiver = receiver;
         this.requestId = UUID.randomUUID().toString();
+    }
+
+    public Packet(PacketType packetType, String pong) {
     }
 
     public static Packet createEchoRequest(String sender, String message) {
@@ -145,26 +147,3 @@ public class Packet {
                 '}';
     }
 }
-=======
-public class Packet {
-    private int length;
-    private PacketType type;
-    private String payload;
-
-    public Packet() {} // Dành cho Jackson
-
-    public Packet(PacketType type, String payload) {
-        this.type = type;
-        this.payload = payload;
-    }
-
-    public int getLength() { return length; }
-    public void setLength(int length) { this.length = length; }
-
-    public PacketType getType() { return type; }
-    public void setType(PacketType type) { this.type = type; }
-
-    public String getPayload() { return payload; }
-    public void setPayload(String payload) { this.payload = payload; }
-}
->>>>>>> 8baad60d68f0886283b7ccda1ca4376fd03e9b80
