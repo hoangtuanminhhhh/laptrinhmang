@@ -18,11 +18,6 @@ import java.util.Objects;
  * Kiểm tra cơ chế đóng/mở gói (Framing) của PacketFramer chống dính gói và xé
  * gói.
  *
- * Thiết kế dựa theo cấu trúc test độc lập có sẵn trong com.chat.test (như
- * DatabaseTest),
- * cho phép chạy trực tiếp qua hàm main() mà không phụ thuộc vào thư viện ngoài.
- *
- * Chịu trách nhiệm: Thành viên 6 — QA & Git Flow & Architecture Documentation.
  */
 public class PacketFramerTest {
 

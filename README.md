@@ -15,13 +15,13 @@
 
 - **Ngôn ngữ:** Java 21 (LTS)
 - **Mạng:** Java Socket (TCP thuần, I/O Streams đa luồng)
-- **Giao diện (GUI):** JavaFX 21.0.2 (FXML, Scene Builder, CSS Styling)
-- **Định dạng dữ liệu:** Jackson Databind 2.17.0 / Gson 2.10.1 (POJO <-> JSON UTF-8)
-- **Cơ sở dữ liệu:** SQLite JDBC 3.45.2.0 (`chat.db`)
-- **Bảo mật:** jBCrypt 0.4 / at.favre.lib:bcrypt 0.10.2 (Mã hóa băm mật khẩu người dùng)
-- **Nhật ký (Logging):** SLF4J + Logback Classic
+- **Giao diện (GUI):** JavaFX 21.0.6 (FXML, Scene Builder, CSS Styling)
+- **Định dạng dữ liệu:** Jackson Databind 2.17.2 / Gson 2.10.1 (POJO <-> JSON UTF-8)
+- **Cơ sở dữ liệu:** SQLite JDBC 3.45.1.0 (`chat.db`)
+- **Bảo mật:** at.favre.lib:bcrypt 0.10.2 được khai báo; `AuthService` hiện sử dụng SHA-256
+- **Nhật ký (Logging):** `System.out` và `System.err`
 - **Kiểm thử tự động:** JUnit Jupiter 5 & Custom Standalone Test Runners
-- **Quản lý dự án & Build:** Apache Maven 3.9+
+- **Quản lý dự án & Build:** Apache Maven
 - **Quản lý mã nguồn:** Git & GitHub
 
 ---
@@ -29,8 +29,8 @@
 ## 2. Yêu cầu môi trường
 
 - **JDK:** Java Development Kit 21 trở lên (khuyến nghị Eclipse Temurin 21 hoặc Oracle OpenJDK 21)
-- **Maven:** Apache Maven 3.9.0 trở lên
-- **Hệ điều hành đã thử nghiệm:** Windows 10/11 (64-bit), macOS (Apple Silicon / Intel), Ubuntu 22.04 LTS
+- **Maven:** Apache Maven
+- **Hệ điều hành:** Các hệ điều hành hỗ trợ JDK 21 và JavaFX
 - **Scene Builder (Tùy chọn):** Khuyến nghị cài đặt để xem và chỉnh sửa giao diện FXML trực quan
 
 ---
@@ -43,34 +43,30 @@
 
 ## 4. Chức năng hệ thống
 
-### Chức năng bắt buộc:
+### Chức năng hiện có:
 
-1. **Gửi và nhận tin nhắn qua TCP:** Truyền tải thời gian thực giữa các client qua Server định tuyến.
-2. **Reply tin nhắn:** Trả lời một tin nhắn cụ thể, hiển thị trích dẫn nội dung và người gửi của tin nhắn gốc.
-3. **Forward tin nhắn:** Chuyển tiếp tin nhắn sang cho người dùng khác trong danh bạ.
-4. **Hiển thị Avatar người dùng:** Avatar bo tròn trong danh sách bạn bè và khung chat (hỗ trợ fallback avatar theo chữ cái viết tắt).
-5. **Bộ chọn Emoji:** Popup chọn bảng icon Emoji (40–60 emoji phổ biến), chèn ký tự Unicode trực tiếp vào ô chat không lỗi font.
+1. **Gửi và nhận Echo qua TCP:** Client gửi yêu cầu Echo tới Server và nhận phản hồi.
+2. **Kết nối mạng bất đồng bộ:** Client kết nối và nhận thông báo trạng thái mạng qua listener.
+3. **Thành phần người dùng và SQLite:** Có các lớp model, repository và service xác thực.
+4. **Hiển thị Avatar:** Có thành phần `AvatarView` với ảnh đại diện hoặc chữ viết tắt.
+5. **Bộ chọn Emoji:** Có popup chọn emoji và chèn ký tự Unicode vào ô nhập JavaFX.
 
 ### Trạng thái kết nối hiển thị trên GUI:
 
-- **Xám (Offline/Idle):** Chưa kết nối
-- **Vàng (Connecting):** Đang kết nối tới Server
-- **Xanh (Connected):** Đã kết nối thành công
-- **Đỏ (Disconnected/Error):** Mất kết nối hoặc kết nối thất bại
-- **Trạng thái tin nhắn:** _Đang gửi..._, _Đã gửi_, _Gửi thất bại_.
+- Client hiển thị thông báo đang kết nối, kết nối thành công, ngắt kết nối và lỗi trong vùng chat.
 
 ---
 
 ## 5. Bảng phân công thành viên nhóm
 
-| STT | Họ và tên      |  MSSV  | Vai trò / Phụ trách chính                         | Nhiệm vụ chi tiết (Tuần 1 & 2)                                                                                      |
-| :-: | :------------- | :----: | :------------------------------------------------ | :------------------------------------------------------------------------------------------------------------------ |
-|  1  | _Trưởng nhóm_  | _MSSV_ | **Network Architect & Server Core**               | `Packet`, `PacketType`, `PacketFramer`, `ChatServer`, `ClientHandler`, `ServerApp`.                                 |
-|  2  | _Thành viên 2_ | _MSSV_ | **Server Database & Config Manager**              | `server.properties`, `schema.sql`, `NetworkConfig`, `User`/`Message` Model, `DatabaseManager`, `UserRepository`.    |
-|  3  | _Thành viên 3_ | _MSSV_ | **Client Network Engine & Multi-threading**       | `NetworkService`, `ServerListener`, `NetworkEventListener`, `client.properties`.                                    |
-|  4  | _Thành viên 4_ | _MSSV_ | **Client UI Lead (JavaFX & Scene Builder)**       | `ConfigDialog.fxml`, `MainChatView.fxml`, `style.css`, `ConfigDialogController`, `MainChatController`, `ClientApp`. |
-|  5  | _Thành viên 5_ | _MSSV_ | **Client UI Components & Media (Avatar & Emoji)** | `AvatarView`, `EmojiPickerPopup`, `default_avatar.png`, `AvatarEmojiDemoApp`. _(Đã hoàn thành)_                     |
-|  6  | _Thành viên 6_ | _MSSV_ | **QA, Git Flow & Architecture Documentation**     | `.gitignore`, `README.md`, `PROTOCOL_SPEC.md`, `TEST_PLAN_PHASE1.md`, `REPORT_DRAFT.md`, `PacketFramerTest.java`.   |
+| STT | Họ và tên      |     MSSV     | Vai trò / Phụ trách chính                         | Nhiệm vụ chi tiết (Tuần 1 & 2)                                                                                    |
+| :-: | :------------- | :----------: | :------------------------------------------------ | :---------------------------------------------------------------------------------------------------------------- |
+|  1  | _Trưởng nhóm_  |    _MSSV_    | **Network Architect & Server Core**               | `Packet`, `PacketType`, `PacketFramer`, `ChatServer`, `ClientHandler`, `ServerApp`.                               |
+|  2  | _Thành viên 2_ |    _MSSV_    | **Server Database & Config Manager**              | `server.properties`, `schema.sql`, `NetworkConfig`, `User`/`Message` Model, `DatabaseManager`, `UserRepository`.  |
+|  3  | _Thành viên 3_ |    _MSSV_    | **Client Network Engine & Multi-threading**       | `NetworkService`, `ServerListener`, `NetworkEventListener`, `client.properties`.                                  |
+|  4  | _Thành viên 4_ |    _MSSV_    | **Client UI Lead (JavaFX & Scene Builder)**       | `configdialog.fxml`, `MainChatView.fxml`, `ConfigDialogController`, `MainChatController`, `ClientApp`.            |
+|  5  | _Thành viên 5_ |    _MSSV_    | **Client UI Components & Media (Avatar & Emoji)** | `AvatarView`, `EmojiPickerPopup`, `default_avatar.png`, `AvatarEmojiDemoApp`. _(Đã hoàn thành)_                   |
+|  6  | Trần Quốc Bảo  | 052206014593 | **QA, Git Flow & Architecture Documentation**     | `.gitignore`, `README.md`, `PROTOCOL_SPEC.md`, `TEST_PLAN_PHASE1.md`, `REPORT_DRAFT.md`, `PacketFramerTest.java`. |
 
 ---
 
@@ -78,14 +74,14 @@
 
 ### 6.1. Mô hình tổng thể
 
-Hệ thống hoạt động theo mô hình Client–Server tập trung qua giao thức vận chuyển TCP:
+Hệ thống hiện có mô hình Client–Server qua TCP; Server hiện xử lý yêu cầu Echo:
 
 ```
   +--------------+                               +--------------+
   |   Client A   | <======== TCP Stream =======> |              |
   |  (JavaFX UI) |                               |    SERVER    |
   +--------------+                               | (Thread Pool |
-                                                 |  & Routing)  |
+                                                 |  & Echo)     |
   +--------------+                               |              |
   |   Client B   | <======== TCP Stream =======> |   chat.db    |
   |  (JavaFX UI) |                               |   (SQLite)   |
@@ -114,13 +110,13 @@ TCP là giao thức hướng luồng (stream-oriented), không phân định ran
 ### 6.3. Các loại gói tin chính (Packet Types)
 
 - `ECHO_REQUEST` / `ECHO_RESPONSE`: Kiểm thử đường truyền Phase 1.
-- `CONNECT_REQUEST` / `CONNECT_RESPONSE`: Bắt tay thiết lập phiên.
-- `LOGIN_REQUEST` / `LOGIN_RESPONSE`: Đăng nhập & xác thực danh tính.
-- `MESSAGE_SEND` / `MESSAGE_RECEIVE`: Gửi và nhận tin nhắn riêng/nhóm.
-- `REPLY_SEND` / `REPLY_RECEIVE`: Trả lời tin nhắn kèm ID tin nhắn cha.
-- `FORWARD_SEND` / `FORWARD_RECEIVE`: Chuyển tiếp tin nhắn cho người khác.
-- `PING` / `PONG`: Heartbeat định kỳ giữ kết nối và phát hiện timeout.
-- `ERROR_RESPONSE`: Phản hồi lỗi nghiệp vụ từ Server.
+- `CONNECT_REQUEST` / `CONNECT_RESPONSE`: Dự kiến dùng cho bắt tay thiết lập phiên.
+- `LOGIN_REQUEST` / `LOGIN_RESPONSE`: Dự kiến dùng cho đăng nhập và xác thực.
+- `MESSAGE_SEND` / `MESSAGE_RECEIVE`: Dự kiến dùng cho gửi và nhận tin nhắn.
+- `REPLY_SEND` / `REPLY_RECEIVE`: Dự kiến dùng cho trả lời tin nhắn.
+- `FORWARD_SEND` / `FORWARD_RECEIVE`: Dự kiến dùng cho chuyển tiếp tin nhắn.
+- `PING` / `PONG`: Dự kiến dùng cho heartbeat.
+- `ERROR_RESPONSE`: Dự kiến dùng cho phản hồi lỗi nghiệp vụ.
 
 _(Xem chi tiết đặc tả từng trường JSON tại [docs/PROTOCOL_SPEC.md](docs/PROTOCOL_SPEC.md))_
 
@@ -128,26 +124,24 @@ _(Xem chi tiết đặc tả từng trường JSON tại [docs/PROTOCOL_SPEC.md]
 
 ## 7. Cấu hình hệ thống
 
-### Phía Server (`laptrinhmang/Code/src/main/resources/server.properties`):
+### Phía Server (`Code/src/main/resources/server.properties`):
 
 ```properties
 # Cổng lắng nghe kết nối TCP
-server.port=5000
-
-# Đường dẫn file CSDL SQLite
-database.path=data/chat.db
-
-# Thời gian timeout chờ đọc dữ liệu (ms)
-server.read.timeout=30000
+server.port=8888
+server.max_connections=100
+server.read_timeout=30000
+db.url=jdbc:sqlite:chat.db
 ```
 
-### Phía Client (`laptrinhmang/Code/src/main/resources/client.properties`):
+### Phía Client (`Code/src/main/resources/client.properties`):
 
 ```properties
 # Cấu hình mặc định khi mở app
-server.host=127.0.0.1
-server.port=5000
-connect.timeout=5000
+server.ip=127.0.0.1
+server.port=8888
+connection.timeout=5000
+heartbeat.interval=30000
 ```
 
 ---
@@ -163,46 +157,24 @@ cd laptrinhmang
 
 ### Bước 2: Build toàn bộ dự án với Maven
 
-Di chuyển vào thư mục chứa code:
+Di chuyển vào thư mục chứa code. Các file `Packet.java`, `PacketFramer.java` và `PacketType.java` hiện còn dấu phân định conflict Git, cần giải quyết trước khi build:
 
 ```bash
-cd laptrinhmang/Code
+cd Code
 mvn clean package -DskipTests
 ```
 
 ### Bước 3: Khởi chạy Server
 
-Cách 1 — Chạy qua Maven plugin:
-
-```bash
-mvn exec:java
-```
-
-Cách 2 — Chạy file JAR độc lập sau khi build:
-
-```bash
-java -jar target/chat-server.jar
-```
+Chạy lớp `com.chat.server.ServerApp` từ IDE có hỗ trợ Maven.
 
 ### Bước 4: Khởi chạy Client
 
-Cách 1 — Chạy qua JavaFX Maven plugin:
-
-```bash
-mvn javafx:run
-```
-
-Cách 2 — Chạy file JAR độc lập:
-
-```bash
-java -jar target/chat-client.jar
-```
+Chạy lớp `com.chat.client.ClientApp` từ IDE có hỗ trợ Maven.
 
 ### Chạy ứng dụng Demo độc lập (Avatar & Emoji Picker của TV5):
 
-```bash
-mvn test-compile exec:java -Dexec.mainClass="com.chat.test.AvatarEmojiDemoLauncher" -Dexec.classpathScope="test"
-```
+Chạy lớp `com.chat.test.AvatarEmojiDemoLauncher` từ IDE với classpath kiểm thử Maven.
 
 ---
 
@@ -210,23 +182,21 @@ mvn test-compile exec:java -Dexec.mainClass="com.chat.test.AvatarEmojiDemoLaunch
 
 Dự án tích hợp bộ kiểm thử cho từng tầng:
 
-### Kiểm thử CSDL & Xác thực tài khoản:
+### Kiểm thử JUnit:
 
-```bash
-java -cp "target/classes;target/test-classes" com.chat.test.DatabaseTest
+```powershell
+cd Code
+mvn test
 ```
 
-### Kiểm thử Giao thức Đóng/Mở gói chống dính và xé gói (`PacketFramerTest`):
+### Kiểm thử JSON và mô phỏng ngắt kết nối:
 
-```bash
-java -cp "target/classes;target/test-classes" com.chat.test.PacketFramerTest
+```powershell
+cd Code
+mvn "-Dtest=PacketSerializationTest,DisconnectSimulationTest" test
 ```
 
-Hoặc khi cấu hình JUnit trên IDE / Maven:
-
-```bash
-mvn test -Dtest=PacketFramerTest
-```
+`DatabaseTest` và `PacketFramerTest` là standalone test runners; chạy từ IDE với classpath kiểm thử Maven.
 
 _(Chi tiết danh mục test cases kiểm thử tích hợp xem tại [docs/TEST_PLAN_PHASE1.md](docs/TEST_PLAN_PHASE1.md))_
 
@@ -242,38 +212,36 @@ _(Chi tiết danh mục test cases kiểm thử tích hợp xem tại [docs/TEST
 │   ├── PROTOCOL_SPEC.md                # Đặc tả chi tiết giao thức TCP byte-level
 │   ├── TEST_PLAN_PHASE1.md             # Kịch bản kiểm thử tích hợp Phase 1
 │   └── REPORT_DRAFT.md                 # Khung sườn báo cáo môn học
-├── laptrinhmang/
-│   ├── Code/                           # Maven Project
-│   │   ├── pom.xml                     # Cấu hình Maven dependencies & plugins
-│   │   ├── .gitignore
-│   │   └── src/
-│   │       ├── main/
-│   │       │   ├── java/com/chat/
-│   │       │   │   ├── client/         # Client network, UI controllers & components
-│   │       │   │   ├── common/         # Protocol, config, model dùng chung
-│   │       │   │   └── server/         # Server socket core, thread pool, db
-│   │       │   └── resources/          # FXML, CSS, icons, properties
-│   │       └── test/java/com/chat/test/ # Standalone Unit tests & Demo launchers
-│   ├── DOCX/                           # Báo cáo đồ án (.docx)
-│   ├── Extra/                          # Ảnh demo, bằng chứng test, sơ đồ
-│   └── PPTX/                           # Slide thuyết trình báo cáo (.pptx)
+├── Code/                               # Maven Project
+│   ├── pom.xml                         # Cấu hình Maven dependencies
+│   ├── .gitignore
+│   └── src/
+│       ├── main/
+│       │   ├── java/com/chat/
+│       │   │   ├── client/             # Client network, UI controllers & components
+│       │   │   ├── common/             # Protocol, config, model dùng chung
+│       │   │   └── server/             # Server socket core, thread pool, db
+│       │   └── resources/              # FXML, icons, properties
+│       └── test/java/com/chat/test/    # Tests & Demo launchers
+├── DOCX/                               # Báo cáo đồ án (.docx)
+├── Extra/                              # Ảnh demo, bằng chứng test, sơ đồ
+└── PPTX/                               # Slide thuyết trình báo cáo (.pptx)
 ```
 
 ---
 
 ## 11. Xử lý lỗi & Nhật ký (Logging)
 
-- Ứng dụng ghi nhận log có cấu trúc thông qua thư viện `Logback`.
-- Mọi sự kiện kết nối, ngắt kết nối bất thường (`EOFException`, `SocketTimeoutException`) đều được ghi log rõ ràng ở cấp độ `INFO` và `WARN` kèm địa chỉ Remote IP.
-- Mọi thao tác ngoại lệ mạng ở Client đều được chuyển tiếp an toàn về giao diện JavaFX thông qua `Platform.runLater()` nhằm tránh hiện tượng crash giao diện hoặc Not-Responding.
+- Ứng dụng hiện ghi thông tin và lỗi bằng `System.out` và `System.err`.
+- Client chuyển một số cập nhật từ sự kiện mạng về giao diện JavaFX thông qua `Platform.runLater()`.
 
 ---
 
 ## 12. Giới hạn & Hướng phát triển trong Phase 2
 
-- **Phase 1 (Hiện tại):** Hoàn thành bắt tay TCP, đóng gói 4-byte header, truyền tải tin nhắn Echo, xử lý UI status bar, tích hợp Avatar bo tròn và bảng Emoji.
+- **Hiện tại:** Có client/server TCP cơ bản, trao đổi Echo, các thành phần Avatar và Emoji, cùng các lớp SQLite và xác thực.
 - **Phase 2:**
-  - Hệ thống xác thực đăng ký / đăng nhập với SQLite và jBCrypt.
-  - Chat riêng tư 1-1 và Chat nhóm nhiều thành viên.
-  - Cơ chế mã hóa End-to-End (E2EE) hoặc TLS/SSL cho kết nối Socket.
+  - Tích hợp xác thực đăng ký / đăng nhập với luồng giao tiếp TCP.
+  - Hoàn thiện chat riêng tư 1-1 và chat nhóm nhiều thành viên.
+  - Cơ chế mã hóa TLS/SSL cho kết nối Socket.
   - Truyền tải file đính kèm (ảnh, tài liệu).
