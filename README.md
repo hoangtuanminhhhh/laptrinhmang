@@ -59,15 +59,7 @@
 
 ## 5. Bảng phân công thành viên, test case nhóm
 
-| STT | Họ và tên      |  MSSV  | Vai trò / Phụ trách chính                         | Nhiệm vụ chi tiết (Tuần 1 & 2)                                                                                      |
-| :-: | :------------- | :----: | :------------------------------------------------ | :------------------------------------------------------------------------------------------------------------------ |
-|  1  | _Trưởng nhóm_  | _MSSV_ | **Network Architect & Server Core**               | `Packet`, `PacketType`, `PacketFramer`, `ChatServer`, `ClientHandler`, `ServerApp`.                                 |
-|  2  | _Thành viên 2_ | _MSSV_ | **Server Database & Config Manager**              | `server.properties`, `schema.sql`, `NetworkConfig`, `User`/`Message` Model, `DatabaseManager`, `UserRepository`.    |
-|  3  | _Thành viên 3_ | _MSSV_ | **Client Network Engine & Multi-threading**       | `NetworkService`, `ServerListener`, `NetworkEventListener`, `client.properties`.                                    |
-|  4  | _Thành viên 4_ | _MSSV_ | **Client UI Lead (JavaFX & Scene Builder)**       | `ConfigDialog.fxml`, `MainChatView.fxml`, `style.css`, `ConfigDialogController`, `MainChatController`, `ClientApp`. |
-|  5  | _Thành viên 5_ | _MSSV_ | **Client UI Components & Media (Avatar & Emoji)** | `AvatarView`, `EmojiPickerPopup`, `default_avatar.png`, `AvatarEmojiDemoApp`. _(Đã hoàn thành)_                     |
-|  6  | _Thành viên 6_ | _MSSV_ | **QA, Git Flow & Architecture Documentation**     | `.gitignore`, `README.md`, `PROTOCOL_SPEC.md`, `TEST_PLAN_PHASE1.md`, `REPORT_DRAFT.md`, `PacketFramerTest.java`.   |
-
+https://docs.google.com/spreadsheets/d/1TjxjPc3fDuEKGZbD5TwTIdteOx1nKgsdwFgd8YFjZPk/edit?gid=667579612#gid=667579612 (File test case)
 
 ## 6. Kiến trúc hệ thống & Giao thức
 
