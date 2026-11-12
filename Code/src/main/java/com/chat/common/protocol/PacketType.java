@@ -12,6 +12,8 @@ public enum PacketType {
     // Xác thực tài khoản
     LOGIN_REQUEST,
     LOGIN_RESPONSE,
+    REGISTER_REQUEST,
+    LOGOUT_REQUEST,
 
     // Nhắn tin cơ bản
     MESSAGE_SEND,
@@ -28,13 +30,6 @@ public enum PacketType {
     PONG,
     AVATAR_UPDATE,
     USER_STATUS_CHANGE,
-    ERROR_RESPONSE
+    ERROR_RESPONSE,
+    CHAT_ACK
 }
-=======
-public enum PacketType {
-    ECHO_REQUEST,
-    ECHO_RESPONSE,
-    PING,
-    PONG
-}
->>>>>>> 8baad60d68f0886283b7ccda1ca4376fd03e9b80

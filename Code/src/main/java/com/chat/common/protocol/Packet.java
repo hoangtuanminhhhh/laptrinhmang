@@ -1,12 +1,14 @@
 package com.chat.common.protocol;
 
-<<<<<<< HEAD
+import com.fasterxml.jackson.annotation.JsonGetter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
@@ -45,9 +47,6 @@ public class Packet {
         this.sender = sender;
         this.receiver = receiver;
         this.requestId = UUID.randomUUID().toString();
-    }
-
-    public Packet(PacketType packetType, String pong) {
     }
 
     public static Packet createEchoRequest(String sender, String message) {
@@ -96,11 +95,17 @@ public class Packet {
         return json.getBytes(StandardCharsets.UTF_8);
     }
 
-    public static Packet fromBytes(byte[] bytes) throws Exception {
+    public static Packet fromBytes(byte[] bytes) throws IOException {
+        if (bytes == null) {
+            throw new IllegalArgumentException("Dữ liệu gói tin không được null.");
+        }
         return MAPPER.readValue(bytes, Packet.class);
     }
 
-    public static Packet fromJson(String json) throws Exception {
+    public static Packet fromJson(String json) throws JsonProcessingException {
+        if (json == null) {
+            throw new IllegalArgumentException("JSON gói tin không được null.");
+        }
         return MAPPER.readValue(json, Packet.class);
     }
 
@@ -151,8 +156,13 @@ public class Packet {
 
     @JsonSetter("payload")
     public void setPayload(Object payloadObj) {
-        if (payloadObj instanceof Map) {
-            this.payload = (Map<String, Object>) payloadObj;
+        if (payloadObj instanceof Map<?, ?> payloadMap) {
+            this.payload = new HashMap<>();
+            for (Map.Entry<?, ?> entry : payloadMap.entrySet()) {
+                if (entry.getKey() instanceof String key) {
+                    this.payload.put(key, entry.getValue());
+                }
+            }
         } else if (payloadObj != null) {
             this.payload = new HashMap<>();
             this.payload.put("message", payloadObj.toString());
@@ -173,26 +183,3 @@ public class Packet {
                 '}';
     }
 }
-=======
-public class Packet {
-    private int length;
-    private PacketType type;
-    private String payload;
-
-    public Packet() {} // Dành cho Jackson
-
-    public Packet(PacketType type, String payload) {
-        this.type = type;
-        this.payload = payload;
-    }
-
-    public int getLength() { return length; }
-    public void setLength(int length) { this.length = length; }
-
-    public PacketType getType() { return type; }
-    public void setType(PacketType type) { this.type = type; }
-
-    public String getPayload() { return payload; }
-    public void setPayload(String payload) { this.payload = payload; }
-}
->>>>>>> 8baad60d68f0886283b7ccda1ca4376fd03e9b80
