@@ -22,11 +22,15 @@ public class PacketFramer {
      * Đóng khung và gửi một mảng byte nhị phân ra stream.
      */
     public static void writeFrame(OutputStream out, byte[] payload) throws IOException {
+        if (out == null) {
+            throw new IllegalArgumentException("OutputStream không được null.");
+        }
         if (payload == null) {
-            throw new IllegalArgumentException("Payload cannot be null");
+            throw new IllegalArgumentException("Payload không được null.");
         }
         if (payload.length > MAX_PAYLOAD_SIZE) {
-            throw new IOException("Payload size (" + payload.length + " bytes) exceeds maximum allowed size (" + MAX_PAYLOAD_SIZE + " bytes)");
+            throw new IOException("Kích thước payload " + payload.length
+                    + " byte vượt quá giới hạn " + MAX_PAYLOAD_SIZE + " byte.");
         }
 
         DataOutputStream dos = (out instanceof DataOutputStream) ? (DataOutputStream) out : new DataOutputStream(out);
@@ -39,6 +43,9 @@ public class PacketFramer {
      * Đọc một khung nhị phân hoàn chỉnh từ InputStream.
      */
     public static byte[] readFrame(InputStream in) throws IOException {
+        if (in == null) {
+            throw new IllegalArgumentException("InputStream không được null.");
+        }
         DataInputStream dis = (in instanceof DataInputStream) ? (DataInputStream) in : new DataInputStream(in);
 
         int length;
@@ -49,10 +56,11 @@ public class PacketFramer {
         }
 
         if (length < 0) {
-            throw new IOException("Invalid packet length: " + length + " (negative length is not permitted)");
+            throw new IOException("Độ dài khung không hợp lệ: " + length + ".");
         }
         if (length > MAX_PAYLOAD_SIZE) {
-            throw new IOException("Packet length " + length + " bytes exceeds maximum allowed limit " + MAX_PAYLOAD_SIZE + " bytes");
+            throw new IOException("Độ dài khung " + length
+                    + " byte vượt quá giới hạn " + MAX_PAYLOAD_SIZE + " byte.");
         }
 
         byte[] payload = new byte[length];
@@ -64,6 +72,9 @@ public class PacketFramer {
      * Đóng gói và gửi một đối tượng Packet ra Stream.
      */
     public static void writePacket(OutputStream out, Packet packet) throws IOException {
+        if (packet == null) {
+            throw new IllegalArgumentException("Packet không được null.");
+        }
         byte[] bytes = packet.toBytes();
         writeFrame(out, bytes);
     }
@@ -71,46 +82,8 @@ public class PacketFramer {
     /**
      * Đọc một đối tượng Packet từ Stream.
      */
-    public static Packet readPacket(InputStream in) throws Exception {
+    public static Packet readPacket(InputStream in) throws IOException {
         byte[] bytes = readFrame(in);
         return Packet.fromBytes(bytes);
     }
 }
-=======
-import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
-
-public class PacketFramer {
-    private static final ObjectMapper objectMapper = new ObjectMapper();
-
-    public static void writePacket(DataOutputStream out, Packet packet) throws IOException {
-        String jsonPayload = objectMapper.writeValueAsString(packet.getPayload());
-        byte[] payloadBytes = jsonPayload.getBytes("UTF-8");
-        int length = payloadBytes.length + 4; // 4 bytes cho PacketType
-
-        out.writeInt(length);
-        out.writeInt(packet.getType().ordinal());
-        out.write(payloadBytes);
-        out.flush();
-    }
-
-    public static Packet readPacket(DataInputStream in) throws IOException {
-        int length = in.readInt();
-        int typeOrdinal = in.readInt();
-        PacketType type = PacketType.values()[typeOrdinal];
-
-        int payloadLength = length - 4;
-        byte[] payloadBytes = new byte[payloadLength];
-        in.readFully(payloadBytes);
-
-        String jsonPayload = new String(payloadBytes, "UTF-8");
-        String payload = objectMapper.readValue(jsonPayload, String.class);
-
-        Packet packet = new Packet(type, payload);
-        packet.setLength(length);
-        return packet;
-    }
-}
->>>>>>> 8baad60d68f0886283b7ccda1ca4376fd03e9b80
