@@ -129,7 +129,11 @@ public class NetworkService {
                         Long.parseLong(props.getProperty("reconnect.max.delay",
                                 String.valueOf(ReconnectManager.DEFAULT_MAX_DELAY_MS)).trim()),
                         Integer.parseInt(props.getProperty("reconnect.max.attempts",
-                                String.valueOf(ReconnectManager.DEFAULT_MAX_ATTEMPTS)).trim())
+                                String.valueOf(ReconnectManager.DEFAULT_MAX_ATTEMPTS)).trim()),
+                        Double.parseDouble(props.getProperty("reconnect.backoff.multiplier",
+                                String.valueOf(ReconnectManager.DEFAULT_BACKOFF_MULTIPLIER)).trim()),
+                        Double.parseDouble(props.getProperty("reconnect.jitter.ratio",
+                                String.valueOf(ReconnectManager.DEFAULT_JITTER_RATIO)).trim())
                 );
             }
         } catch (Exception e) {
@@ -348,6 +352,11 @@ public class NetworkService {
 
     public void configureReconnect(boolean enabled, long initialDelayMs, long maxDelayMs, int maxAttempts) {
         reconnectManager.configure(enabled, initialDelayMs, maxDelayMs, maxAttempts);
+    }
+
+    public void configureReconnect(boolean enabled, long initialDelayMs, long maxDelayMs, int maxAttempts,
+                                   double backoffMultiplier, double jitterRatio) {
+        reconnectManager.configure(enabled, initialDelayMs, maxDelayMs, maxAttempts, backoffMultiplier, jitterRatio);
     }
 
     boolean reconnectNow() {
@@ -861,6 +870,10 @@ public class NetworkService {
 
     public HeartbeatService getHeartbeatService() {
         return heartbeatService;
+    }
+
+    public ReconnectManager getReconnectManager() {
+        return reconnectManager;
     }
 
     public long getLastRttMs() {
