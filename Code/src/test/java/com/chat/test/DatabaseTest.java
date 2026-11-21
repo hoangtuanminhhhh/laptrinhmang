@@ -3,6 +3,7 @@ package com.chat.test;
 import com.chat.server.db.DatabaseManager;
 import com.chat.server.db.MessageRepository;
 import com.chat.server.service.AuthService;
+import com.chat.server.service.DatabaseCleanupService;
 import com.chat.common.model.Message;
 
 public class DatabaseTest {
@@ -32,5 +33,10 @@ public class DatabaseTest {
         
         boolean saveMsgSuccess = msgRepo.saveMessage(msg);
         System.out.println("Lưu tin nhắn mới: " + (saveMsgSuccess ? "PASS" : "FAIL"));
+
+        System.out.println("\n--- TEST DATABASE CLEANUP & LOGBACK ---");
+        DatabaseCleanupService cleanupService = new DatabaseCleanupService();
+        cleanupService.runCleanup();
+        cleanupService.stop();
     }
 }
