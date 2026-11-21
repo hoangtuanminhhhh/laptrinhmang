@@ -8,13 +8,27 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 
 public class ClientHandler implements Runnable {
     private final Socket socket;
     private DataOutputStream output;
+    private final ServerMetrics metrics;
 
     public ClientHandler(Socket socket) {
+        this(socket, null);
+    }
+
+    public ClientHandler(Socket socket, ServerMetrics metrics) {
         this.socket = socket;
+        this.metrics = metrics;
+    }
+
+    private long payloadBytes(Packet packet) {
+        if (packet == null || packet.getPayload() == null) {
+            return 0L;
+        }
+        return packet.getPayload().getBytes(StandardCharsets.UTF_8).length;
     }
 
     @Override
@@ -30,11 +44,19 @@ public class ClientHandler implements Runnable {
 
             while (!socket.isClosed()) {
                 Packet request = PacketFramer.readPacket(in);
+                if (metrics != null) {
+                    metrics.addBytesTransferred(payloadBytes(request));
+                }
 
                 if (request.getType() == PacketType.ECHO_REQUEST) {
                     System.out.println("Received: " + request.getPayload());
                     Packet response = new Packet(PacketType.ECHO_RESPONSE, request.getPayload());
+
                     sendPacket(response);
+                    if (metrics != null) {
+                        metrics.incrementMessagesSent();
+                        metrics.addBytesTransferred(payloadBytes(response));
+                    }
                 }
             }
         } catch (Exception e) {

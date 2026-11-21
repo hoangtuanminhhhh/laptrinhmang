@@ -9,12 +9,24 @@ import java.util.concurrent.Executors;
 public class ChatServer {
     private final int port;
     private final ExecutorService threadPool;
+    private final ServerMetrics metrics; // <-- THÊM
     private ServerSocket serverSocket;
     private volatile boolean isRunning = false;
 
     public ChatServer(int port, int maxThreads) {
+        this(port, maxThreads, new ServerMetrics()); // <-- SỬA: gọi constructor có metrics
+    }
+
+    // <-- THÊM constructor này để nhận metrics từ bên ngoài (nếu có)
+    public ChatServer(int port, int maxThreads, ServerMetrics metrics) {
         this.port = port;
         this.threadPool = Executors.newFixedThreadPool(maxThreads);
+        this.metrics = (metrics != null) ? metrics : new ServerMetrics();
+    }
+
+    // <-- THÊM getter để lấy metrics nếu cần
+    public ServerMetrics getMetrics() {
+        return metrics;
     }
 
     /**
@@ -37,7 +49,14 @@ public class ChatServer {
 
             while (isRunning) {
                 Socket clientSocket = serverSocket.accept();
-                threadPool.execute(new ClientHandler(clientSocket));
+                metrics.setOnlineClients(metrics.getOnlineClients() + 1); // <-- THÊM
+                threadPool.execute(() -> { // <-- SỬA: bọc ClientHandler để giảm số client khi thoát
+                    try {
+                        new ClientHandler(clientSocket, metrics).run();
+                    } finally {
+                        metrics.setOnlineClients(Math.max(0, metrics.getOnlineClients() - 1));
+                    }
+                });
             }
         } catch (IOException e) {
             if (isRunning) {
@@ -50,6 +69,7 @@ public class ChatServer {
 
     public void stop() {
         isRunning = false;
+        metrics.setOnlineClients(0); // <-- THÊM
         try {
             if (serverSocket != null && !serverSocket.isClosed()) {
                 serverSocket.close();
