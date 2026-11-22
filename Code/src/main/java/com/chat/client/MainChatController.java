@@ -1,8 +1,10 @@
 package com.chat.client;
 
+import com.chat.client.component.SoundManager;
 import com.chat.client.net.NetworkEventListener;
 import com.chat.client.net.NetworkService;
 import com.chat.common.protocol.Packet;
+import com.chat.common.protocol.PacketType;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -22,6 +24,7 @@ public class MainChatController implements NetworkEventListener {
     @FXML private TextArea chatTextArea;
     @FXML private TextField messageField;
     @FXML private Button sendButton;
+    @FXML private Button muteButton;
     @FXML private ListView<String> userListView;
 
     // Bổ sung các thành phần cho Status Bar ở đáy ứng dụng
@@ -39,6 +42,12 @@ public class MainChatController implements NetworkEventListener {
     public void initialize() {
         // Đăng ký nhận sự kiện mạng từ NetworkService
         NetworkService.getInstance().setEventListener(this);
+        updateMuteButton();
+        muteButton.setOnAction(event -> {
+            SoundManager soundManager = SoundManager.getInstance();
+            soundManager.setMuted(!soundManager.isMuted());
+            updateMuteButton();
+        });
 
         // Cấu hình hiển thị danh sách người dùng bên Sidebar với chấm trạng thái Xanh/Xám
         userListView.setItems(userList);
@@ -150,9 +159,36 @@ public class MainChatController implements NetworkEventListener {
             if (packet != null) {
                 // Sử dụng getPayload() đúng với cấu trúc lớp Packet của nhóm
                 chatTextArea.appendText("Server: " + packet.getPayload() + "\n");
+                chatTextArea.positionCaret(chatTextArea.getLength());
+                if (isIncomingMessage(packet)) {
+                    SoundManager.getInstance().playNotificationSound();
+                }
                 updateStatusIndicator("GREEN", "Đã nhận phản hồi từ Server");
             }
         });
+    }
+
+    private boolean isIncomingMessage(Packet packet) {
+        PacketType type = packet.getType();
+        if (type != PacketType.MESSAGE_RECEIVE
+                && type != PacketType.REPLY_RECEIVE
+                && type != PacketType.FORWARD_RECEIVE) {
+            return false;
+        }
+        String sender = packet.getSender();
+        String currentUser = NetworkService.getInstance().getCurrentUsername();
+        return sender == null || currentUser == null || !sender.equalsIgnoreCase(currentUser);
+    }
+
+    private void updateMuteButton() {
+        if (muteButton == null) {
+            return;
+        }
+        boolean muted = SoundManager.getInstance().isMuted();
+        muteButton.setText(muted ? "🔇" : "🔊");
+        muteButton.setAccessibleText(muted
+                ? "Bật âm thanh thông báo"
+                : "Tắt âm thanh thông báo");
     }
 
     @Override

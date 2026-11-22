@@ -8,10 +8,21 @@
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.shape.Circle?>
 
-<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="500.0" prefWidth="700.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.chat.client.MainChatController">
+<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="500.0" prefWidth="700.0" stylesheets="@css/style.css" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.chat.client.MainChatController">
+    <top>
+        <HBox alignment="CENTER_LEFT" spacing="10.0" styleClass="chat-header">
+            <padding>
+                <Insets bottom="10.0" left="16.0" right="12.0" top="10.0"/>
+            </padding>
+            <Label style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #0F172A;" text="Phòng chat"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button fx:id="muteButton" accessibleText="Tắt âm thanh thông báo" styleClass="mute-button" text="🔊"/>
+        </HBox>
+    </top>
     <center>
         <VBox spacing="10.0">
             <padding>

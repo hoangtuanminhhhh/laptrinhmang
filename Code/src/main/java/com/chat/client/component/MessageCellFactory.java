@@ -21,12 +21,6 @@ import java.util.function.BiConsumer;
 public final class MessageCellFactory {
 
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
-    private static final String OWN_BUBBLE_STYLE = "-fx-background-color: #2563EB;"
-            + " -fx-background-radius: 16px; -fx-padding: 10px 12px;";
-    private static final String OTHER_BUBBLE_STYLE = "-fx-background-color: #FFFFFF;"
-            + " -fx-background-radius: 16px; -fx-border-color: #E2E8F0;"
-            + " -fx-border-radius: 16px; -fx-border-width: 1px; -fx-padding: 10px 12px;";
-
     private MessageCellFactory() {
         throw new AssertionError("Không tạo đối tượng từ lớp tiện ích MessageCellFactory.");
     }
@@ -97,7 +91,7 @@ public final class MessageCellFactory {
 
         Label contentLabel = new Label(content);
         contentLabel.setWrapText(true);
-        contentLabel.setMaxWidth(340.0);
+        contentLabel.getStyleClass().add("chat-message-label");
         contentLabel.setStyle("-fx-font-size: 13px; -fx-text-fill: "
                 + (isOwn ? "#FFFFFF" : "#0F172A") + ";");
         bubbleContent.getChildren().add(contentLabel);
@@ -110,8 +104,7 @@ public final class MessageCellFactory {
         bubbleContent.getChildren().add(timeLabel);
 
         VBox bubble = new VBox(bubbleContent);
-        bubble.setMaxWidth(370.0);
-        bubble.setStyle(isOwn ? OWN_BUBBLE_STYLE : OTHER_BUBBLE_STYLE);
+        bubble.getStyleClass().add(isOwn ? "chat-bubble-own" : "chat-bubble-other");
 
         Button replyButton = createActionButton("↩", "Trả lời");
         Button forwardButton = createActionButton("↪", "Chuyển tiếp");
@@ -133,6 +126,8 @@ public final class MessageCellFactory {
 
         HBox row = new HBox(8.0);
         row.setAlignment(isOwn ? Pos.CENTER_RIGHT : Pos.CENTER_LEFT);
+        bubble.maxWidthProperty().bind(row.widthProperty().multiply(0.72));
+        contentLabel.maxWidthProperty().bind(row.widthProperty().multiply(0.65));
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
         if (isOwn) {
@@ -153,9 +148,7 @@ public final class MessageCellFactory {
         button.setMinSize(28.0, 28.0);
         button.setPrefSize(28.0, 28.0);
         button.setMaxSize(28.0, 28.0);
-        button.setStyle("-fx-background-color: #FFFFFF; -fx-text-fill: #475569;"
-                + " -fx-background-radius: 14px; -fx-border-color: #E2E8F0;"
-                + " -fx-border-radius: 14px; -fx-padding: 0px;");
+        button.getStyleClass().add("chat-action-button");
         return button;
     }
 
