@@ -19,6 +19,7 @@ import java.util.Properties;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
@@ -40,7 +41,7 @@ public class NetworkService {
     public static final int MAX_AVATAR_BASE64_LENGTH = 5 * 1024 * 1024;
 
     // Singleton instance giúp các Controller của TV4 truy cập thuận tiện
-    private static final NetworkService INSTANCE = new NetworkService();
+    private static final NetworkService INSTANCE = new NetworkService(true);
 
     // Thread pool xử lý các tác vụ kết nối và gửi gói tin (Daemon thread để tự tắt khi đóng UI)
     private final ExecutorService ioExecutor = Executors.newCachedThreadPool(r -> {
@@ -56,6 +57,7 @@ public class NetworkService {
     private final Object writeLock = new Object();
 
     private volatile Socket socket;
+    private volatile Socket pendingSocket;
     private volatile DataInputStream inputStream;
     private volatile DataOutputStream outputStream;
     private volatile ServerListener serverListener;
@@ -66,7 +68,9 @@ public class NetworkService {
     private final AtomicBoolean connected = new AtomicBoolean(false);
     private final AtomicBoolean connecting = new AtomicBoolean(false);
     private final AtomicBoolean networkLost = new AtomicBoolean(false);
+    private final AtomicBoolean shutDown = new AtomicBoolean(false);
     private final AtomicLong connectGeneration = new AtomicLong(0);
+    private volatile Thread shutdownHook;
 
     // true khi người dùng chủ động ngắt kết nối hoặc tắt ứng dụng -> không kích hoạt Auto-reconnect
     private volatile boolean manualDisconnect = false;
@@ -90,16 +94,46 @@ public class NetworkService {
     private int heartbeatMaxMissed = HeartbeatService.DEFAULT_MAX_MISSED;
 
     public NetworkService() {
-        loadClientProperties();
+        this(false);
     }
 
     /**
      * Constructor cho phép tùy chỉnh thông số Heartbeat (phục vụ kiểm thử tự động).
      */
     public NetworkService(long heartbeatIntervalMs, int heartbeatMaxMissed) {
-        loadClientProperties();
+        this(false);
         this.heartbeatIntervalMs = heartbeatIntervalMs;
         this.heartbeatMaxMissed = heartbeatMaxMissed;
+    }
+
+    private NetworkService(boolean registerShutdownHook) {
+        loadClientProperties();
+        if (registerShutdownHook) {
+            installShutdownHook();
+        }
+    }
+
+    private void installShutdownHook() {
+        Thread hook = new Thread(this::shutdown, "Client-Network-Shutdown-Hook");
+        try {
+            Runtime.getRuntime().addShutdownHook(hook);
+            this.shutdownHook = hook;
+        } catch (IllegalStateException | SecurityException ignored) {
+            this.shutdownHook = null;
+        }
+    }
+
+    private void unregisterShutdownHook() {
+        Thread hook = this.shutdownHook;
+        this.shutdownHook = null;
+        if (hook == null) {
+            return;
+        }
+        try {
+            Runtime.getRuntime().removeShutdownHook(hook);
+        } catch (IllegalStateException | SecurityException ignored) {
+            // Đang trong quá trình tắt JVM hoặc không có quyền gỡ hook
+        }
     }
 
     public static NetworkService getInstance() {
@@ -238,6 +272,10 @@ public class NetworkService {
      * @param timeoutMs Thời gian chờ tối đa (ms)
      */
     public void connect(String ip, int port, int timeoutMs) {
+        if (shutDown.get()) {
+            notifyError("Dịch vụ mạng đã đóng, không thể kết nối.", null);
+            return;
+        }
         if (!connecting.compareAndSet(false, true)) {
             notifyError("Đang trong quá trình kết nối, vui lòng đợi...", null);
             return;
@@ -248,17 +286,33 @@ public class NetworkService {
         manualDisconnect = false;
         notifyConnecting(ip, port);
 
-        ioExecutor.submit(() -> {
-            if (isConnected()) {
-                handleConnectionClosed(false);
+        try {
+            ioExecutor.submit(() -> {
+                if (gen != connectGeneration.get() || manualDisconnect || shutDown.get()) {
+                    releaseConnectingIfCurrent(gen);
+                    return;
+                }
+                if (isConnected()) {
+                    handleConnectionClosed(false);
+                }
+                establishConnection(ip, port, timeoutMs, true, gen);
+            });
+        } catch (RejectedExecutionException e) {
+            releaseConnectingIfCurrent(gen);
+            if (!shutDown.get()) {
+                notifyError("Không thể khởi tạo tác vụ kết nối mạng.", e);
             }
-            establishConnection(ip, port, timeoutMs, true, gen);
-        });
+        }
     }
 
     boolean establishConnection(String ip, int port, int timeoutMs, boolean reportErrors, long expectedGen) {
-        connecting.set(true);
+        if (shutDown.get() || expectedGen != connectGeneration.get() || manualDisconnect) {
+            releaseConnectingIfCurrent(expectedGen);
+            return false;
+        }
         Socket newSocket = null;
+        DataInputStream in = null;
+        DataOutputStream out = null;
         try {
             if (isBlank(ip)) {
                 throw new UnknownHostException("Địa chỉ IP không được để trống.");
@@ -269,36 +323,72 @@ public class NetworkService {
 
             String trimmedIp = ip.trim();
             newSocket = new Socket();
+            boolean abortedBeforeConnect = false;
+            synchronized (this) {
+                if (shutDown.get() || expectedGen != connectGeneration.get() || manualDisconnect) {
+                    releaseConnectingIfCurrent(expectedGen);
+                    abortedBeforeConnect = true;
+                } else {
+                    this.pendingSocket = newSocket;
+                }
+            }
+            if (abortedBeforeConnect) {
+                closeSocketQuietly(newSocket);
+                return false;
+            }
+
             newSocket.connect(new InetSocketAddress(trimmedIp, port), Math.max(timeoutMs, 1000));
             newSocket.setKeepAlive(true);
             newSocket.setTcpNoDelay(true);
 
-            DataInputStream in = new DataInputStream(newSocket.getInputStream());
-            DataOutputStream out = new DataOutputStream(newSocket.getOutputStream());
+            in = new DataInputStream(newSocket.getInputStream());
+            out = new DataOutputStream(newSocket.getOutputStream());
+
+            DataInputStream staleIn;
+            DataOutputStream staleOut;
+            Socket staleSocket;
+            boolean abortedAfterConnect = false;
 
             synchronized (this) {
-                if (expectedGen != connectGeneration.get() || manualDisconnect) {
-                    closeSocketQuietly(newSocket);
-                    connecting.set(false);
-                    return false;
+                if (this.pendingSocket == newSocket) {
+                    this.pendingSocket = null;
                 }
-                this.socket = newSocket;
-                this.inputStream = in;
-                this.outputStream = out;
+                if (shutDown.get() || expectedGen != connectGeneration.get() || manualDisconnect) {
+                    releaseConnectingIfCurrent(expectedGen);
+                    staleIn = in;
+                    staleOut = out;
+                    staleSocket = newSocket;
+                    abortedAfterConnect = true;
+                } else {
+                    staleIn = this.inputStream;
+                    staleOut = this.outputStream;
+                    staleSocket = this.socket;
 
-                this.lastIp = trimmedIp;
-                this.lastPort = port;
-                this.lastTimeoutMs = timeoutMs;
+                    this.socket = newSocket;
+                    this.inputStream = in;
+                    this.outputStream = out;
 
-                connected.set(true);
-                connecting.set(false);
-                networkLost.set(false);
+                    this.lastIp = trimmedIp;
+                    this.lastPort = port;
+                    this.lastTimeoutMs = timeoutMs;
+
+                    connected.set(true);
+                    connecting.set(false);
+                    networkLost.set(false);
+                }
+            }
+
+            if (staleIn != null || staleOut != null || staleSocket != null) {
+                closeResourcesQuietly(staleIn, staleOut, staleSocket);
+            }
+            if (abortedAfterConnect) {
+                return false;
             }
 
             notifyConnected();
 
             synchronized (this) {
-                if (expectedGen != connectGeneration.get() || !connected.get()) {
+                if (shutDown.get() || expectedGen != connectGeneration.get() || !connected.get()) {
                     return false;
                 }
                 serverListener = new ServerListener(in, this);
@@ -313,28 +403,40 @@ public class NetworkService {
             return true;
 
         } catch (IllegalArgumentException e) {
-            handleConnectFailure(newSocket, reportErrors, e.getMessage(), e);
+            handleConnectFailure(in, out, newSocket, expectedGen, reportErrors, e.getMessage(), e);
         } catch (UnknownHostException e) {
-            handleConnectFailure(newSocket, reportErrors,
+            handleConnectFailure(in, out, newSocket, expectedGen, reportErrors,
                     "Không tìm thấy địa chỉ máy chủ '" + ip + "'. Vui lòng kiểm tra lại IP/Tên miền.", e);
         } catch (SocketTimeoutException e) {
-            handleConnectFailure(newSocket, reportErrors,
+            handleConnectFailure(in, out, newSocket, expectedGen, reportErrors,
                     "Hết thời gian chờ kết nối (" + timeoutMs + "ms) tới " + ip + ":" + port + ". Kiểm tra lại IP hoặc tường lửa.", e);
         } catch (ConnectException e) {
-            handleConnectFailure(newSocket, reportErrors,
+            handleConnectFailure(in, out, newSocket, expectedGen, reportErrors,
                     "Máy chủ " + ip + ":" + port + " từ chối kết nối (Server có thể chưa bật hoặc sai Port).", e);
         } catch (IOException e) {
-            handleConnectFailure(newSocket, reportErrors,
+            handleConnectFailure(in, out, newSocket, expectedGen, reportErrors,
                     "Lỗi mạng khi kết nối tới máy chủ: " + e.getMessage(), e);
         }
         return false;
     }
 
-    private void handleConnectFailure(Socket failedSocket, boolean reportErrors, String message, Throwable cause) {
-        connecting.set(false);
-        closeSocketQuietly(failedSocket);
-        if (reportErrors) {
+    private void handleConnectFailure(DataInputStream in, DataOutputStream out, Socket failedSocket,
+                                      long expectedGen, boolean reportErrors, String message, Throwable cause) {
+        synchronized (this) {
+            if (failedSocket != null && this.pendingSocket == failedSocket) {
+                this.pendingSocket = null;
+            }
+        }
+        releaseConnectingIfCurrent(expectedGen);
+        closeResourcesQuietly(in, out, failedSocket);
+        if (reportErrors && expectedGen == connectGeneration.get() && !manualDisconnect && !shutDown.get()) {
             notifyError(message, cause);
+        }
+    }
+
+    private void releaseConnectingIfCurrent(long expectedGen) {
+        if (expectedGen == connectGeneration.get()) {
+            connecting.set(false);
         }
     }
 
@@ -360,13 +462,20 @@ public class NetworkService {
     }
 
     boolean reconnectNow() {
-        if (manualDisconnect || lastIp == null) {
+        if (manualDisconnect || shutDown.get() || lastIp == null) {
             return true;
         }
         if (isConnected()) {
             return true;
         }
-        long gen = connectGeneration.get();
+        final long gen = connectGeneration.get();
+        if (!connecting.compareAndSet(false, true)) {
+            return false;
+        }
+        if (manualDisconnect || shutDown.get() || gen != connectGeneration.get()) {
+            releaseConnectingIfCurrent(gen);
+            return manualDisconnect || shutDown.get();
+        }
         boolean ok = establishConnection(lastIp, lastPort, lastTimeoutMs, false, gen);
         if (ok) {
             notifyReconnected();
@@ -380,7 +489,7 @@ public class NetworkService {
     }
 
     void startReconnectIfNeeded() {
-        if (!manualDisconnect && lastIp != null && !isConnected()) {
+        if (!manualDisconnect && !shutDown.get() && lastIp != null && !isConnected()) {
             reconnectManager.start();
         }
     }
@@ -400,24 +509,40 @@ public class NetworkService {
             return;
         }
         final DataOutputStream out = this.outputStream;
-        if (!isConnected() || out == null) {
-            notifyError("Chưa kết nối tới máy chủ. Không thể gửi dữ liệu.", null);
+        if (shutDown.get() || !isConnected() || out == null) {
+            if (!shutDown.get()) {
+                notifyError("Chưa kết nối tới máy chủ. Không thể gửi dữ liệu.", null);
+            }
             return;
         }
 
-        ioExecutor.submit(() -> {
-            synchronized (writeLock) {
-                try {
-                    PacketFramer.writePacket(out, packet);
-                    out.flush();
-                } catch (IOException e) {
-                    notifyError("Không thể gửi dữ liệu tới máy chủ: " + e.getMessage(), e);
-                    handleConnectionClosed(true);
-                } catch (RuntimeException e) {
-                    notifyError("Gói tin không hợp lệ, không thể gửi: " + e.getMessage(), e);
+        try {
+            ioExecutor.submit(() -> {
+                IOException writeFailure = null;
+                RuntimeException packetFailure = null;
+                synchronized (writeLock) {
+                    if (shutDown.get() || manualDisconnect || !isConnected() || this.outputStream != out) {
+                        return;
+                    }
+                    try {
+                        PacketFramer.writePacket(out, packet);
+                        out.flush();
+                    } catch (IOException e) {
+                        writeFailure = e;
+                    } catch (RuntimeException e) {
+                        packetFailure = e;
+                    }
                 }
-            }
-        });
+                if (packetFailure != null && !shutDown.get() && !manualDisconnect) {
+                    notifyError("Gói tin không hợp lệ, không thể gửi: " + packetFailure.getMessage(), packetFailure);
+                } else if (writeFailure != null && !manualDisconnect && !shutDown.get() && this.outputStream == out) {
+                    notifyError("Không thể gửi dữ liệu tới máy chủ: " + writeFailure.getMessage(), writeFailure);
+                    handleConnectionClosed(true);
+                }
+            });
+        } catch (RejectedExecutionException ignored) {
+            // Executor đã dừng trong quá trình tắt ứng dụng
+        }
     }
 
     /**
@@ -723,13 +848,25 @@ public class NetworkService {
     // NGẮT KẾT NỐI & DỌN DẸP TÀI NGUYÊN
     // =========================================================================
 
+    boolean isClosingIntentionally() {
+        return manualDisconnect || shutDown.get();
+    }
+
     public void disconnect() {
         manualDisconnect = true;
         connectGeneration.incrementAndGet();
         lastPassword = null;
         connecting.set(false);
         reconnectManager.cancel();
-        ioExecutor.submit(() -> handleConnectionClosed(false));
+        if (shutDown.get() || ioExecutor.isShutdown()) {
+            handleConnectionClosed(false);
+            return;
+        }
+        try {
+            ioExecutor.submit(() -> handleConnectionClosed(false));
+        } catch (RejectedExecutionException e) {
+            handleConnectionClosed(false);
+        }
     }
 
     void handleConnectionClosed(boolean allowReconnect) {
@@ -738,61 +875,107 @@ public class NetworkService {
 
     private void closeConnectionIf(ServerListener expectedListener, boolean allowReconnect) {
         boolean wasConnected;
+        HeartbeatService hbToStop;
+        ServerListener listenerToStop;
+        Thread threadToInterrupt;
+        DataInputStream inToClose;
+        DataOutputStream outToClose;
+        Socket socketToClose;
+        Socket pendingToClose;
+
         synchronized (this) {
             if (expectedListener != null && expectedListener != this.serverListener) {
                 return;
             }
             wasConnected = connected.getAndSet(false);
 
-            if (heartbeatService != null) {
-                heartbeatService.stop();
-                heartbeatService = null;
-            }
+            hbToStop = this.heartbeatService;
+            this.heartbeatService = null;
 
-            if (serverListener != null) {
-                serverListener.stop();
-                serverListener = null;
-            }
+            listenerToStop = this.serverListener;
+            this.serverListener = null;
 
-            if (listenerThread != null && listenerThread != Thread.currentThread()) {
-                listenerThread.interrupt();
-                listenerThread = null;
-            }
+            threadToInterrupt = this.listenerThread;
+            this.listenerThread = null;
 
-            closeResourcesSilently();
+            inToClose = this.inputStream;
+            this.inputStream = null;
+
+            outToClose = this.outputStream;
+            this.outputStream = null;
+
+            socketToClose = this.socket;
+            this.socket = null;
+
+            if (expectedListener == null) {
+                pendingToClose = this.pendingSocket;
+                this.pendingSocket = null;
+            } else {
+                pendingToClose = null;
+            }
+        }
+
+        if (hbToStop != null) {
+            hbToStop.stop();
+        }
+        if (listenerToStop != null) {
+            listenerToStop.stop();
+        }
+
+        closeResourcesQuietly(inToClose, outToClose, socketToClose);
+        if (pendingToClose != null && pendingToClose != socketToClose) {
+            closeSocketQuietly(pendingToClose);
+        }
+
+        if (threadToInterrupt != null && threadToInterrupt != Thread.currentThread()) {
+            threadToInterrupt.interrupt();
         }
 
         if (wasConnected) {
             notifyDisconnected();
-            if (allowReconnect) {
+            if (allowReconnect && !manualDisconnect && !shutDown.get()) {
                 startReconnectIfNeeded();
             }
         }
     }
 
-    private void closeResourcesSilently() {
-        try {
-            if (inputStream != null) inputStream.close();
-        } catch (IOException ignored) {}
-        try {
-            if (outputStream != null) outputStream.close();
-        } catch (IOException ignored) {}
-        try {
-            if (socket != null && !socket.isClosed()) socket.close();
-        } catch (IOException ignored) {}
-
-        inputStream = null;
-        outputStream = null;
-        socket = null;
+    private static void closeResourcesQuietly(DataInputStream in, DataOutputStream out, Socket s) {
+        if (s != null && s.isConnected() && !s.isClosed()) {
+            try {
+                if (!s.isInputShutdown()) {
+                    s.shutdownInput();
+                }
+            } catch (IOException | UnsupportedOperationException ignored) {}
+            try {
+                if (!s.isOutputShutdown()) {
+                    s.shutdownOutput();
+                }
+            } catch (IOException | UnsupportedOperationException ignored) {}
+        }
+        if (in != null) {
+            try {
+                in.close();
+            } catch (IOException ignored) {}
+        }
+        if (out != null) {
+            try {
+                out.close();
+            } catch (IOException ignored) {}
+        }
+        closeSocketQuietly(s);
     }
 
     public void shutdown() {
+        boolean firstShutdown = shutDown.compareAndSet(false, true);
         manualDisconnect = true;
         connectGeneration.incrementAndGet();
         lastPassword = null;
         connecting.set(false);
         reconnectManager.shutdown();
         handleConnectionClosed(false);
+        if (firstShutdown) {
+            unregisterShutdownHook();
+        }
         ioExecutor.shutdownNow();
     }
 
@@ -866,6 +1049,18 @@ public class NetworkService {
 
     public boolean isReconnecting() {
         return reconnectManager.isActive();
+    }
+
+    public boolean isShutdown() {
+        return shutDown.get();
+    }
+
+    boolean hasPendingSocket() {
+        return pendingSocket != null;
+    }
+
+    boolean hasActiveSocket() {
+        return socket != null;
     }
 
     public HeartbeatService getHeartbeatService() {
