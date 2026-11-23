@@ -282,8 +282,13 @@ public class NetworkService {
         }
 
         final long gen = connectGeneration.incrementAndGet();
-        reconnectManager.cancel();
+        reconnectManager.reset();
         manualDisconnect = false;
+        if (!isBlank(ip) && port >= 1 && port <= 65535) {
+            this.lastIp = ip.trim();
+            this.lastPort = port;
+            this.lastTimeoutMs = timeoutMs;
+        }
         notifyConnecting(ip, port);
 
         try {
@@ -479,13 +484,63 @@ public class NetworkService {
         boolean ok = establishConnection(lastIp, lastPort, lastTimeoutMs, false, gen);
         if (ok) {
             notifyReconnected();
-            String user = this.currentUsername;
-            String pass = this.lastPassword;
-            if (pass != null && !GUEST_USER.equals(user)) {
-                sendLogin(user, pass);
-            }
+            restoreSessionAfterReconnect();
         }
         return ok;
+    }
+
+    /**
+     * Kích hoạt thử kết nối lại ngay lập tức một cách bất đồng bộ (dùng cho nút "Kết nối lại ngay" trên UI).
+     *
+     * @return true nếu đã lên lịch hoặc đã kết nối, false nếu đang bận kết nối hoặc thiếu thông tin máy chủ
+     */
+    public boolean retryReconnectNow() {
+        if (shutDown.get()) {
+            notifyError("Dịch vụ mạng đã đóng, không thể kết nối lại.", null);
+            return false;
+        }
+        if (isConnected()) {
+            return true;
+        }
+        if (isConnecting()) {
+            return false;
+        }
+        String targetIp = this.lastIp;
+        int targetPort = this.lastPort;
+        int targetTimeout = this.lastTimeoutMs > 0 ? this.lastTimeoutMs : defaultTimeout;
+        if (isBlank(targetIp) || targetPort < 1 || targetPort > 65535) {
+            notifyError("Chưa có thông tin máy chủ để kết nối lại.", null);
+            return false;
+        }
+        manualDisconnect = false;
+        connectGeneration.incrementAndGet();
+        if (reconnectManager.isEnabled()) {
+            return reconnectManager.retryNow();
+        }
+        connect(targetIp, targetPort, targetTimeout);
+        return true;
+    }
+
+    /**
+     * Hủy tiến trình tự động kết nối lại hiện hành nhưng giữ nguyên thông số máy chủ gần nhất.
+     */
+    public void cancelReconnect() {
+        reconnectManager.cancel();
+    }
+
+    private void restoreSessionAfterReconnect() {
+        if (manualDisconnect || shutDown.get() || !isConnected()) {
+            return;
+        }
+        String user = this.currentUsername;
+        String pass = this.lastPassword;
+        if (!isBlank(user) && !GUEST_USER.equals(user) && pass != null && !pass.isEmpty()) {
+            sendLogin(user, pass);
+        }
+    }
+
+    private void clearSavedCredentials() {
+        lastPassword = null;
     }
 
     void startReconnectIfNeeded() {
@@ -624,7 +679,7 @@ public class NetworkService {
                     .addPayload("username", currentUsername);
             sendPacket(packet);
         }
-        lastPassword = null;
+        clearSavedCredentials();
         currentUsername = GUEST_USER;
     }
 
@@ -827,12 +882,13 @@ public class NetworkService {
     }
 
     void onHeartbeatTimeout() {
-        if (!connected.get()) {
+        if (!connected.get() || manualDisconnect || shutDown.get()) {
             return;
         }
-        networkLost.set(true);
-        notifyError("Mất kết nối tới máy chủ (quá " + heartbeatMaxMissed + " chu kỳ Heartbeat không nhận được phản hồi PONG).", null);
-        notifyConnectionLost();
+        if (networkLost.compareAndSet(false, true)) {
+            notifyError("Mất kết nối tới máy chủ (quá " + heartbeatMaxMissed + " chu kỳ Heartbeat không nhận được phản hồi PONG).", null);
+            notifyConnectionLost();
+        }
         handleConnectionClosed(true);
     }
 
@@ -855,7 +911,7 @@ public class NetworkService {
     public void disconnect() {
         manualDisconnect = true;
         connectGeneration.incrementAndGet();
-        lastPassword = null;
+        clearSavedCredentials();
         connecting.set(false);
         reconnectManager.cancel();
         if (shutDown.get() || ioExecutor.isShutdown()) {
@@ -932,8 +988,12 @@ public class NetworkService {
         }
 
         if (wasConnected) {
+            boolean unexpectedDrop = allowReconnect && !manualDisconnect && !shutDown.get();
+            if (unexpectedDrop && networkLost.compareAndSet(false, true)) {
+                notifyConnectionLost();
+            }
             notifyDisconnected();
-            if (allowReconnect && !manualDisconnect && !shutDown.get()) {
+            if (unexpectedDrop) {
                 startReconnectIfNeeded();
             }
         }
@@ -969,7 +1029,7 @@ public class NetworkService {
         boolean firstShutdown = shutDown.compareAndSet(false, true);
         manualDisconnect = true;
         connectGeneration.incrementAndGet();
-        lastPassword = null;
+        clearSavedCredentials();
         connecting.set(false);
         reconnectManager.shutdown();
         handleConnectionClosed(false);
@@ -1049,6 +1109,30 @@ public class NetworkService {
 
     public boolean isReconnecting() {
         return reconnectManager.isActive();
+    }
+
+    public int getReconnectAttempt() {
+        return reconnectManager.getCurrentAttempt();
+    }
+
+    public long getNextReconnectDelayMs() {
+        return reconnectManager.getLastScheduledDelayMs();
+    }
+
+    public long getReconnectRemainingMs() {
+        if (!reconnectManager.isActive()) {
+            return 0L;
+        }
+        long target = reconnectManager.getNextAttemptAtMs();
+        return target > 0L ? Math.max(0L, target - System.currentTimeMillis()) : 0L;
+    }
+
+    public String getLastIp() {
+        return lastIp;
+    }
+
+    public int getLastPort() {
+        return lastPort;
     }
 
     public boolean isShutdown() {
