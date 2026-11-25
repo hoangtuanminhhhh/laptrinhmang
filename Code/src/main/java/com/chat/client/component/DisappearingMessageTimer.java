@@ -25,21 +25,7 @@ import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-/**
- * Quản lý tính năng Tin nhắn tự hủy (Disappearing Messages) trong hệ thống TCP Chat.
- * <p>
- * Tính năng cho phép thiết lập thời gian tồn tại (TTL - Time-To-Live) cho tin nhắn.
- * Khi đồng hồ đếm ngược kết thúc:
- * <ul>
- *   <li>Cập nhật giao diện đếm ngược theo thời gian thực (giây).</li>
- *   <li>Thực hiện hiệu ứng biến mất mượt mà (FadeTransition) trên giao diện JavaFX.</li>
- *   <li>Tự động xóa tin nhắn khỏi khung hiển thị trò chuyện (Pane / VBox / ListView).</li>
- *   <li>Kích hoạt callback thông báo hết hạn để dọn dẹp dữ liệu tương ứng.</li>
- * </ul>
- * <p>
- * Lớp được thiết kế đa luồng an toàn (thread-safe), hỗ trợ cả môi trường JavaFX
- * đồ họa lẫn môi trường kiểm thử không giao diện (headless / JUnit test).
- */
+
 public class DisappearingMessageTimer {
 
     private static final Logger LOGGER = Logger.getLogger(DisappearingMessageTimer.class.getName());

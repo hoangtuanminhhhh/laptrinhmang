@@ -25,18 +25,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
-/**
- * Ứng dụng JavaFX độc lập để minh họa và nghiệm thu tính năng
- * Tin nhắn tự hủy (Disappearing Messages) của Thành viên 6 (Quốc Bảo).
- * <p>
- * Tính năng thể hiện:
- * 1. Đặt thời gian tự hủy (TTL: 3s, 5s, 10s, hoặc không tự hủy).
- * 2. Huy hiệu đếm ngược theo thời gian thực (Countdown Badge) trên bubble tin nhắn.
- * 3. Hiệu ứng mờ dần (FadeTransition) mượt mà khi hết thời gian và tự xóa khỏi danh sách.
- * 4. Phát âm thanh hoặc ghi nhận log tự hủy an toàn.
- * <p>
- * Khởi chạy bằng {@link #main(String[])}.
- */
+
 public class DisappearingMessageDemoApp extends Application {
 
     private final DisappearingMessageTimer timer = DisappearingMessageTimer.getInstance();
