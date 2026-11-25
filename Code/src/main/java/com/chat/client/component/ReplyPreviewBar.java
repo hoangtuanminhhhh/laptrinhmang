@@ -1,5 +1,8 @@
 package com.chat.client.component;
 
+import javafx.animation.FadeTransition;
+import javafx.animation.ParallelTransition;
+import javafx.animation.TranslateTransition;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
@@ -20,9 +23,11 @@ public class ReplyPreviewBar extends HBox {
     private String senderName;
     private String snippet;
     private Runnable onCancel = () -> { };
+    private ParallelTransition revealTransition;
 
     /** Tạo thanh xem trước đang ẩn; vùng bố cục được quản lý theo trạng thái hiển thị. */
     public ReplyPreviewBar() {
+        getStyleClass().add("reply-preview-bar");
         setAlignment(Pos.CENTER_LEFT);
         setSpacing(10.0);
         setPadding(new Insets(8.0, 10.0, 8.0, 10.0));
@@ -69,16 +74,33 @@ public class ReplyPreviewBar extends HBox {
         this.snippet = snippet == null ? "" : snippet;
         senderLabel.setText("Đang trả lời " + this.senderName + " —");
         snippetLabel.setText(this.snippet);
+        if (revealTransition != null) {
+            revealTransition.stop();
+        }
         setVisible(true);
+        setOpacity(0.0);
+        setTranslateY(-6.0);
+        FadeTransition fade = new FadeTransition(javafx.util.Duration.millis(180.0), this);
+        fade.setToValue(1.0);
+        TranslateTransition slide = new TranslateTransition(javafx.util.Duration.millis(180.0), this);
+        slide.setToY(0.0);
+        revealTransition = new ParallelTransition(fade, slide);
+        revealTransition.play();
     }
 
     /** Xóa dữ liệu và ẩn thanh xem trước. */
     public void clear() {
+        if (revealTransition != null) {
+            revealTransition.stop();
+            revealTransition = null;
+        }
         messageId = null;
         senderName = null;
         snippet = null;
         senderLabel.setText("");
         snippetLabel.setText("");
+        setOpacity(1.0);
+        setTranslateY(0.0);
         setVisible(false);
     }
 
