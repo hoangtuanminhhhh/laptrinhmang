@@ -17,6 +17,7 @@ public class ClientApp extends Application {
             
             primaryStage.setTitle("Cấu hình kết nối Client");
             primaryStage.setScene(new Scene(root));
+            primaryStage.setOnCloseRequest(event -> NetworkService.getInstance().shutdown());
             primaryStage.show();
         } catch (Exception e) {
             e.printStackTrace();

@@ -5,6 +5,7 @@ import javafx.application.Platform;
 
 import java.util.Objects;
 import java.util.concurrent.Executor;
+import java.util.concurrent.RejectedExecutionException;
 
 /**
  * Decorator đảm bảo MỌI callback mạng đẩy về tầng UI đều chạy an toàn trên JavaFX Application Thread
@@ -36,13 +37,17 @@ public final class FxNetworkEventListener implements NetworkEventListener {
     }
 
     private void runOnUi(Runnable task) {
-        uiExecutor.execute(() -> {
-            try {
-                task.run();
-            } catch (RuntimeException e) {
-                System.err.println("[FxNetworkEventListener] Ngoại lệ khi cập nhật UI: " + e.getMessage());
-            }
-        });
+        try {
+            uiExecutor.execute(() -> {
+                try {
+                    task.run();
+                } catch (RuntimeException e) {
+                    System.err.println("[FxNetworkEventListener] Ngoại lệ khi cập nhật UI: " + e.getMessage());
+                }
+            });
+        } catch (IllegalStateException | RejectedExecutionException e) {
+            System.err.println("[FxNetworkEventListener] Không thể đẩy sự kiện lên UI Thread: " + e.getMessage());
+        }
     }
 
     @Override

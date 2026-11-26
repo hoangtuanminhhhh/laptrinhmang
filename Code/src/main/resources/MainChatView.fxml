@@ -45,14 +45,16 @@
         </VBox>
     </right>
     
-    <!-- THÊM THANH TRẠNG THÁI KẾT NỐI Ở ĐÂY -->
+    <!-- THANH TRẠNG THÁI KẾT NỐI & TỰ ĐỘNG KẾT NỐI LẠI -->
     <bottom>
         <HBox alignment="CENTER_LEFT" spacing="8.0" style="-fx-background-color: #f0f0f0; -fx-border-color: #d0d0d0;">
             <padding>
                 <Insets bottom="5.0" left="10.0" right="10.0" top="5.0"/>
             </padding>
-            <Circle fx:id="statusCircle" fill="GREEN" radius="5.0" />
-            <Label fx:id="statusLabel" text="Đã kết nối tới Server [192.168.1.10:8888]" />
+            <Circle fx:id="statusCircle" fill="GRAY" radius="5.0" />
+            <Label fx:id="statusLabel" text="Chưa kết nối tới Server" />
+            <Region HBox.hgrow="ALWAYS" />
+            <Button fx:id="reconnectButton" managed="false" visible="false" text="Kết nối lại ngay" style="-fx-font-size: 11px; -fx-padding: 2 8 2 8;" />
         </HBox>
     </bottom>
 </BorderPane>

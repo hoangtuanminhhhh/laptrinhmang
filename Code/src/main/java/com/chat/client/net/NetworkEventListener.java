@@ -2,8 +2,16 @@ package com.chat.client.net;
 
 import com.chat.common.protocol.Packet;
 
+import java.util.concurrent.Executor;
+
 /**
  * Interface định nghĩa các sự kiện mạng trả về cho tầng giao diện (UI) (Thành viên 3).
+ * <p>
+ * Thứ tự vòng đời sự kiện khi mất kết nối ngoài ý muốn (Heartbeat timeout hoặc đứt TCP):
+ * {@code onConnectionLost() -> onDisconnected() -> onReconnecting(attempt, delayMs)
+ * -> (onConnected() + onReconnected()) hoặc onReconnectGaveUp()}.
+ * Mỗi sự cố mất kết nối chỉ phát {@code onConnectionLost()} tối đa một lần.
+ * <p>
  * Lưu ý cho TV4 (UI): Các hàm callback mặc định được gọi từ Worker Thread,
  * khi cập nhật giao diện JavaFX phải đẩy về JavaFX Application Thread bằng
  * {@code Platform.runLater(() -> { ... })} hoặc đăng ký qua helper {@link #onFxThread(NetworkEventListener)}:
@@ -30,6 +38,20 @@ public interface NetworkEventListener {
     }
 
     /**
+     * Bọc một listener để mọi callback của nó chạy tuần tự trên {@code uiExecutor} chỉ định.
+     *
+     * @param listener   listener gốc cần chuyển luồng
+     * @param uiExecutor executor đích (ví dụ {@code Platform::runLater} hoặc single-thread executor khi test)
+     * @return listener đã bọc, hoặc {@code null} nếu {@code listener == null}
+     */
+    static NetworkEventListener onExecutor(NetworkEventListener listener, Executor uiExecutor) {
+        if (listener == null) {
+            return null;
+        }
+        return new FxNetworkEventListener(listener, uiExecutor);
+    }
+
+    /**
      * Được gọi ngay khi bắt đầu tiến trình kết nối tới Server.
      * Giúp UI chuyển thanh trạng thái sang màu VÀNG (Đang kết nối...).
      *
@@ -53,7 +75,8 @@ public interface NetworkEventListener {
     void onDisconnected();
 
     /**
-     * Được gọi khi Heartbeat xác định mất kết nối mạng (quá 3 chu kỳ PING không nhận được PONG).
+     * Được gọi tối đa một lần cho mỗi sự cố khi phát hiện mất kết nối ngoài ý muốn
+     * (Heartbeat quá chu kỳ không nhận được PONG hoặc socket TCP bị ngắt bất thường).
      * Giúp UI chuyển thanh trạng thái sang màu ĐỎ: "Mất kết nối tới Server. Đang thử kết nối lại...".
      */
     default void onConnectionLost() {
@@ -61,26 +84,27 @@ public interface NetworkEventListener {
     }
 
     /**
-     * Được gọi trước mỗi lần thử tự động kết nối lại (Auto-reconnect).
-     * Giúp UI hiển thị Đèn ĐỎ: "Mất kết nối tới Server. Đang thử kết nối lại... (Lần #attempt)".
+     * Được gọi ngay trước khi lên lịch mỗi lần thử tự động kết nối lại (Auto-reconnect),
+     * đảm bảo luôn phát trước {@link #onConnected()} / {@link #onReconnected()} ngay cả khi retry ngay ({@code delayMs == 0}).
      *
      * @param attempt Thứ tự lần thử kết nối lại (bắt đầu từ 1)
-     * @param delayMs Thời gian chờ trước lần thử này (ms, tăng dần theo exponential backoff)
+     * @param delayMs Thời gian chờ trước lần thử này (ms, tăng dần theo exponential backoff có jitter)
      */
     default void onReconnecting(int attempt, long delayMs) {
         // Mặc định không bắt buộc override
     }
 
     /**
-     * Được gọi ngay khi tiến trình Auto-reconnect kết nối lại thành công với Server.
-     * Giúp UI khôi phục thanh trạng thái sang màu XANH.
+     * Được gọi ngay sau khi tiến trình Auto-reconnect khôi phục kết nối TCP thành công với Server
+     * (trước khi tự động gửi lại {@code LOGIN_REQUEST} nếu có phiên đăng nhập trước đó).
      */
     default void onReconnected() {
         // Mặc định không bắt buộc override
     }
 
     /**
-     * Được gọi khi đã thử kết nối lại tối đa số lần quy định mà Server vẫn không phản hồi.
+     * Được gọi khi đã thử kết nối lại tối đa {@code maxAttempts} lần mà Server vẫn không phản hồi.
+     * Lúc này tiến trình tự động kết nối lại tạm dừng; UI có thể cho phép người dùng bấm thử lại thủ công.
      */
     default void onReconnectGaveUp() {
         // Mặc định không bắt buộc override

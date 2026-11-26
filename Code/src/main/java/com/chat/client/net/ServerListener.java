@@ -62,26 +62,35 @@ public class ServerListener implements Runnable {
                 dispatchPacket(packet);
             }
         } catch (EOFException e) {
-            if (running) {
+            if (running && !networkService.isClosingIntentionally()) {
                 networkService.notifyError("Máy chủ đã đóng kết nối.", e);
             }
         } catch (SocketException e) {
-            // Nếu running == false nghĩa là Client chủ động gọi disconnect() -> Không báo lỗi
-            if (running) {
+            // Nếu running == false hoặc đang chủ động ngắt kết nối -> Không báo lỗi
+            if (running && !networkService.isClosingIntentionally()) {
                 networkService.notifyError("Mất kết nối đột ngột với máy chủ.", e);
             }
         } catch (IOException e) {
-            if (running) {
+            if (running && !networkService.isClosingIntentionally()) {
                 networkService.notifyError("Lỗi đọc dữ liệu từ máy chủ: " + e.getMessage(), e);
             }
         } catch (Exception e) {
-            if (running) {
+            if (running && !networkService.isClosingIntentionally()) {
                 networkService.notifyError("Lỗi không xác định khi xử lý gói tin: " + e.getMessage(), e);
             }
         } finally {
             running = false;
             // Đảm bảo chỉ đóng kết nối nếu đây vẫn là listener hiện hành
-            networkService.onListenerStopped(this);
+            try {
+                networkService.onListenerStopped(this);
+            } catch (RuntimeException ignored) {
+            }
+            if (inputStream != null) {
+                try {
+                    inputStream.close();
+                } catch (IOException ignored) {
+                }
+            }
         }
     }
 
