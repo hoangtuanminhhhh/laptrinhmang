@@ -1,8 +1,8 @@
 package com.chat.client.net;
 
-import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -39,6 +39,7 @@ public class HeartbeatService {
 
     private ScheduledExecutorService scheduler;
     private ScheduledFuture<?> heartbeatTask;
+    private volatile Thread timerThread;
 
     public HeartbeatService(Runnable pingSender, Runnable onConnectionLost) {
         this(DEFAULT_INTERVAL_MS, DEFAULT_MAX_MISSED, pingSender, onConnectionLost);
@@ -65,12 +66,15 @@ public class HeartbeatService {
         networkLost.set(false);
         lostNotified.set(false);
 
-        scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
+        ScheduledThreadPoolExecutor exec = new ScheduledThreadPoolExecutor(1, r -> {
             Thread t = new Thread(r, "Client-Heartbeat-Timer");
             t.setDaemon(true);
+            timerThread = t;
             return t;
         });
-        heartbeatTask = scheduler.scheduleAtFixedRate(this::tick, intervalMs, intervalMs, TimeUnit.MILLISECONDS);
+        exec.setRemoveOnCancelPolicy(true);
+        scheduler = exec;
+        heartbeatTask = exec.scheduleAtFixedRate(this::tick, intervalMs, intervalMs, TimeUnit.MILLISECONDS);
     }
 
     public synchronized void stop() {
@@ -79,9 +83,16 @@ public class HeartbeatService {
             heartbeatTask.cancel(false);
             heartbeatTask = null;
         }
-        if (scheduler != null) {
-            scheduler.shutdown();
-            scheduler = null;
+        ScheduledExecutorService exec = this.scheduler;
+        Thread currentTimer = this.timerThread;
+        this.scheduler = null;
+        this.timerThread = null;
+        if (exec != null) {
+            if (Thread.currentThread() == currentTimer) {
+                exec.shutdown();
+            } else {
+                exec.shutdownNow();
+            }
         }
     }
 

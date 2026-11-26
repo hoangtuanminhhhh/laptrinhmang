@@ -8,10 +8,21 @@
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.shape.Circle?>
 
-<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="500.0" prefWidth="700.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.chat.client.MainChatController">
+<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="500.0" prefWidth="700.0" stylesheets="@css/style.css" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.chat.client.MainChatController">
+    <top>
+        <HBox alignment="CENTER_LEFT" spacing="10.0" styleClass="chat-header">
+            <padding>
+                <Insets bottom="10.0" left="16.0" right="12.0" top="10.0"/>
+            </padding>
+            <Label style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #0F172A;" text="Phòng chat"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button fx:id="muteButton" accessibleText="Tắt âm thanh thông báo" styleClass="mute-button" text="🔊"/>
+        </HBox>
+    </top>
     <center>
         <VBox spacing="10.0">
             <padding>
@@ -34,14 +45,16 @@
         </VBox>
     </right>
     
-    <!-- THÊM THANH TRẠNG THÁI KẾT NỐI Ở ĐÂY -->
+    <!-- THANH TRẠNG THÁI KẾT NỐI & TỰ ĐỘNG KẾT NỐI LẠI -->
     <bottom>
         <HBox alignment="CENTER_LEFT" spacing="8.0" style="-fx-background-color: #f0f0f0; -fx-border-color: #d0d0d0;">
             <padding>
                 <Insets bottom="5.0" left="10.0" right="10.0" top="5.0"/>
             </padding>
-            <Circle fx:id="statusCircle" fill="GREEN" radius="5.0" />
-            <Label fx:id="statusLabel" text="Đã kết nối tới Server [192.168.1.10:8888]" />
+            <Circle fx:id="statusCircle" fill="GRAY" radius="5.0" />
+            <Label fx:id="statusLabel" text="Chưa kết nối tới Server" />
+            <Region HBox.hgrow="ALWAYS" />
+            <Button fx:id="reconnectButton" managed="false" visible="false" text="Kết nối lại ngay" style="-fx-font-size: 11px; -fx-padding: 2 8 2 8;" />
         </HBox>
     </bottom>
 </BorderPane>

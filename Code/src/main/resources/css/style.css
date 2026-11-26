@@ -1,0 +1,124 @@
+/* Shared polish for the chat window and component demos. */
+.root {
+    -fx-font-family: "Segoe UI", "Arial", sans-serif;
+    -fx-font-smoothing-type: gray;
+}
+
+.chat-header {
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: transparent transparent #E2E8F0 transparent;
+}
+
+/* Slim, rounded vertical scrollbars for ScrollPane and ListView. */
+.scroll-pane .scroll-bar:vertical,
+.list-view .scroll-bar:vertical {
+    -fx-pref-width: 6px;
+    -fx-min-width: 6px;
+    -fx-max-width: 6px;
+    -fx-background-color: transparent;
+    -fx-padding: 0 0 0 0;
+}
+
+.scroll-pane .scroll-bar:vertical .track,
+.list-view .scroll-bar:vertical .track {
+    -fx-background-color: transparent;
+    -fx-background-radius: 3px;
+}
+
+.scroll-pane .scroll-bar:vertical .thumb,
+.list-view .scroll-bar:vertical .thumb {
+    -fx-background-color: #CBD5E1;
+    -fx-background-radius: 3px;
+}
+
+.scroll-pane .scroll-bar:vertical .thumb:hover,
+.list-view .scroll-bar:vertical .thumb:hover {
+    -fx-background-color: #94A3B8;
+}
+
+.scroll-pane .scroll-bar:horizontal,
+.list-view .scroll-bar:horizontal {
+    -fx-pref-height: 0;
+    -fx-min-height: 0;
+    -fx-max-height: 0;
+    -fx-opacity: 0;
+}
+
+.scroll-pane .corner {
+    -fx-background-color: transparent;
+}
+
+/* MessageCellFactory also sets Label.wrapText and a width bound in Java. */
+.chat-message-label {
+    -fx-wrap-text: true;
+}
+
+.chat-bubble-own {
+    -fx-background-color: #2563EB;
+    -fx-background-radius: 16px 16px 4px 16px;
+    -fx-padding: 10px 12px;
+}
+
+.chat-bubble-other {
+    -fx-background-color: #FFFFFF;
+    -fx-background-radius: 16px 16px 16px 4px;
+    -fx-border-color: #E2E8F0;
+    -fx-border-radius: 16px 16px 16px 4px;
+    -fx-border-width: 1px;
+    -fx-padding: 10px 12px;
+}
+
+.mute-button {
+    -fx-background-color: transparent;
+    -fx-background-radius: 18px;
+    -fx-padding: 5px;
+    -fx-font-size: 16px;
+    -fx-cursor: hand;
+}
+
+.mute-button:hover {
+    -fx-background-color: #E2E8F0;
+}
+
+.mute-button:pressed {
+    -fx-background-color: #CBD5E1;
+}
+
+.chat-action-button {
+    -fx-background-color: #FFFFFF;
+    -fx-text-fill: #475569;
+    -fx-background-radius: 14px;
+    -fx-border-color: #E2E8F0;
+    -fx-border-radius: 14px;
+    -fx-padding: 0;
+}
+
+.chat-action-button:hover {
+    -fx-background-color: #EFF6FF;
+    -fx-border-color: #93C5FD;
+}
+
+.demo-button {
+    -fx-background-color: #2563EB;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-background-radius: 8px;
+    -fx-padding: 9px 14px;
+    -fx-cursor: hand;
+}
+
+.demo-button:hover {
+    -fx-background-color: #1D4ED8;
+}
+
+.demo-button:pressed {
+    -fx-background-color: #1E40AF;
+}
+
+.reply-preview-bar {
+    -fx-background-color: #F1F5F9;
+    -fx-background-radius: 8px;
+    -fx-border-color: transparent transparent transparent #2563EB;
+    -fx-border-width: 0 0 0 4px;
+    -fx-border-radius: 8px;
+}
