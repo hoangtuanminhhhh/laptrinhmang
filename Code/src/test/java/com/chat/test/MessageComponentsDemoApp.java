@@ -93,8 +93,8 @@ public class MessageComponentsDemoApp extends Application {
 
         Image sampleAvatar = loadSampleAvatar();
         Message normal = createMessage("1001", 2, "Chào cả nhóm, hôm nay mình họp lúc 14:00 nhé.", false, null);
-        Message emoji = createMessage("1002", 3, "Được nha! Hẹn gặp mọi người 😄🎉", false, null);
-        Message reply = createMessage("1003", 1, "Mình sẽ tham gia nhé.", false, "1001");
+        Message emoji = createMessage("1002", 3, "OK", false, null);
+        Message reply = createMessage("1003", 1, "Okeeee.", false, "1001");
         Message forwarded = createMessage("1004", 2, "Tài liệu buổi học đã được cập nhật.", true, null);
 
         addMessageRow(normal, false, "Minh", "", null, LocalDateTime.now().minusMinutes(12), sampleAvatar);
