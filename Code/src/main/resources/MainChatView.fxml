@@ -1,60 +1,62 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ListView?>
-<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.shape.Circle?>
-
-<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="500.0" prefWidth="700.0" stylesheets="@css/style.css" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.chat.client.MainChatController">
+<BorderPane prefHeight="640" prefWidth="960" minHeight="480" minWidth="700" stylesheets="@css/style.css"
+            xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.chat.client.MainChatController">
     <top>
-        <HBox alignment="CENTER_LEFT" spacing="10.0" styleClass="chat-header">
-            <padding>
-                <Insets bottom="10.0" left="16.0" right="12.0" top="10.0"/>
-            </padding>
-            <Label style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #0F172A;" text="Phòng chat"/>
+        <HBox alignment="CENTER_LEFT" spacing="12" styleClass="chat-header">
+            <padding><Insets top="10" right="16" bottom="10" left="16"/></padding>
+            <StackPane fx:id="ownAvatarSlot" prefWidth="40" prefHeight="40"/>
+            <VBox spacing="2"><Label fx:id="currentUserLabel" text="" styleClass="profile-name"/>
+                <Button fx:id="changeAvatarButton" text="📷 Đổi Avatar" styleClass="link-button"/></VBox>
             <Region HBox.hgrow="ALWAYS"/>
+            <Label fx:id="conversationTitle" text="🌐 Phòng chat chung (Tất cả mọi người)" styleClass="conversation-title"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Label fx:id="ephemeralCountLabel" text=""/>
             <Button fx:id="muteButton" accessibleText="Tắt âm thanh thông báo" styleClass="mute-button" text="🔊"/>
         </HBox>
     </top>
+    <left>
+        <VBox prefWidth="245" spacing="8" styleClass="sidebar">
+            <padding><Insets top="14" right="10" bottom="10" left="10"/></padding>
+            <Label text="Danh bạ" styleClass="sidebar-heading"/>
+            <ListView fx:id="userListView" VBox.vgrow="ALWAYS"/>
+        </VBox>
+    </left>
     <center>
-        <VBox spacing="10.0">
-            <padding>
-                <Insets bottom="10.0" left="10.0" right="10.0" top="10.0"/>
-            </padding>
-            <TextArea fx:id="chatTextArea" editable="false" prefHeight="400.0" prefWidth="500.0" VBox.vgrow="ALWAYS"/>
-            <HBox spacing="10.0">
+        <VBox spacing="8" styleClass="chat-content">
+            <padding><Insets top="12" right="14" bottom="10" left="14"/></padding>
+            <ScrollPane fx:id="messageScrollPane" fitToWidth="true" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED" VBox.vgrow="ALWAYS" styleClass="message-scroll">
+                <content><VBox fx:id="messageContainer" spacing="10" fillWidth="true"/></content>
+            </ScrollPane>
+            <VBox fx:id="replyHolder" spacing="4"/>
+            <HBox spacing="8" alignment="CENTER_LEFT">
+                <Button fx:id="emojiButton" text="😀" focusTraversable="false" styleClass="tool-button"/>
                 <TextField fx:id="messageField" promptText="Nhập tin nhắn..." HBox.hgrow="ALWAYS"/>
-                <Button fx:id="sendButton" defaultButton="true" text="Gửi"/>
+                <ComboBox fx:id="ttlComboBox" prefWidth="180" promptText="Tin nhắn tự hủy"/>
+                <Button fx:id="sendButton" defaultButton="true" text="Gửi" styleClass="primary-button"/>
             </HBox>
         </VBox>
     </center>
-    <right>
-        <VBox prefWidth="180.0" spacing="10.0">
-            <padding>
-                <Insets bottom="10.0" left="10.0" right="10.0" top="10.0"/>
-            </padding>
-            <Label style="-fx-font-weight: bold;" text="Danh sách Online"/>
-            <ListView fx:id="userListView" VBox.vgrow="ALWAYS"/>
-        </VBox>
-    </right>
-    
-    <!-- THANH TRẠNG THÁI KẾT NỐI & TỰ ĐỘNG KẾT NỐI LẠI -->
     <bottom>
-        <HBox alignment="CENTER_LEFT" spacing="8.0" style="-fx-background-color: #f0f0f0; -fx-border-color: #d0d0d0;">
-            <padding>
-                <Insets bottom="5.0" left="10.0" right="10.0" top="5.0"/>
-            </padding>
-            <Circle fx:id="statusCircle" fill="GRAY" radius="5.0" />
-            <Label fx:id="statusLabel" text="Chưa kết nối tới Server" />
-            <Region HBox.hgrow="ALWAYS" />
-            <Button fx:id="reconnectButton" managed="false" visible="false" text="Kết nối lại ngay" style="-fx-font-size: 11px; -fx-padding: 2 8 2 8;" />
+        <HBox alignment="CENTER_LEFT" spacing="8" styleClass="status-bar">
+            <padding><Insets top="6" right="12" bottom="6" left="12"/></padding>
+            <Circle fx:id="statusCircle" fill="GRAY" radius="5"/>
+            <Label fx:id="statusLabel" text="Chưa kết nối tới Server"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button fx:id="reconnectButton" managed="false" visible="false" text="Kết nối lại ngay"/>
         </HBox>
     </bottom>
 </BorderPane>

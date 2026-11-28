@@ -8,6 +8,13 @@ public class Message {
     private String content;
     private String replyTo;
     private boolean isForwarded;
+    private String senderUsername;
+    private String receiverUsername;
+    private String replyToSender;
+    private String replyToSnippet;
+    private String originalSender;
+    private String originalMessageId;
+    private long timestamp;
 
     public Message() {}
 
@@ -31,4 +38,18 @@ public class Message {
 
     public boolean isForwarded() { return isForwarded; }
     public void setForwarded(boolean forwarded) { isForwarded = forwarded; }
+    public String getSenderUsername() { return senderUsername; }
+    public void setSenderUsername(String senderUsername) { this.senderUsername = senderUsername; }
+    public String getReceiverUsername() { return receiverUsername; }
+    public void setReceiverUsername(String receiverUsername) { this.receiverUsername = receiverUsername; }
+    public String getReplyToSender() { return replyToSender; }
+    public void setReplyToSender(String replyToSender) { this.replyToSender = replyToSender; }
+    public String getReplyToSnippet() { return replyToSnippet; }
+    public void setReplyToSnippet(String replyToSnippet) { this.replyToSnippet = replyToSnippet; }
+    public String getOriginalSender() { return originalSender; }
+    public void setOriginalSender(String originalSender) { this.originalSender = originalSender; }
+    public String getOriginalMessageId() { return originalMessageId; }
+    public void setOriginalMessageId(String originalMessageId) { this.originalMessageId = originalMessageId; }
+    public long getTimestamp() { return timestamp; }
+    public void setTimestamp(long timestamp) { this.timestamp = timestamp; }
 }

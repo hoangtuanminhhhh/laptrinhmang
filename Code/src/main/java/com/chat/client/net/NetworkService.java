@@ -703,11 +703,19 @@ public class NetworkService {
      * @return requestId của gói tin, hoặc null nếu không hợp lệ
      */
     public String sendMessage(String receiverId, String content, List<String> emojis) {
+        return sendMessage(receiverId, content, emojis, 0L);
+    }
+
+    public String sendMessage(String receiverId, String content, long ttlSeconds) {
+        return sendMessage(receiverId, content, null, ttlSeconds);
+    }
+
+    public String sendMessage(String receiverId, String content, List<String> emojis, long ttlSeconds) {
         if (isBlank(receiverId) || isBlank(content)) {
             return null;
         }
         Packet packet = new Packet(PacketType.MESSAGE_SEND, currentUsername, receiverId.trim())
-                .addPayload("content", content);
+                .addPayload("content", content).addPayload("ttlSeconds", Math.max(0L, ttlSeconds));
         if (emojis != null && !emojis.isEmpty()) {
             packet.addPayload("emojis", emojis);
         }
@@ -741,14 +749,13 @@ public class NetworkService {
      */
     public String sendReply(String receiverId, String content, long replyToMessageId,
                             String replyToSender, String replyToSnippet) {
-        if (isBlank(receiverId) || isBlank(content)) {
-            return null;
-        }
+        if (isBlank(receiverId) || isBlank(content)) return null;
         Packet packet = new Packet(PacketType.REPLY_SEND, currentUsername, receiverId.trim())
                 .addPayload("content", content)
                 .addPayload("replyToMessageId", replyToMessageId)
                 .addPayload("replyToSender", replyToSender)
-                .addPayload("replyToSnippet", replyToSnippet);
+                .addPayload("replyToSnippet", replyToSnippet)
+                .addPayload("ttlSeconds", 0L);
         sendPacket(packet);
         return packet.getRequestId();
     }
@@ -758,6 +765,11 @@ public class NetworkService {
      */
     public String sendReply(String receiverId, String content, String replyToMessageId,
                             String replyToSender, String replyToSnippet) {
+        return sendReply(receiverId, content, replyToMessageId, replyToSender, replyToSnippet, 0L);
+    }
+
+    public String sendReply(String receiverId, String content, String replyToMessageId,
+                            String replyToSender, String replyToSnippet, long ttlSeconds) {
         if (isBlank(receiverId) || isBlank(content)) {
             return null;
         }
@@ -765,7 +777,8 @@ public class NetworkService {
                 .addPayload("content", content)
                 .addPayload("replyToMessageId", replyToMessageId)
                 .addPayload("replyToSender", replyToSender)
-                .addPayload("replyToSnippet", replyToSnippet);
+                .addPayload("replyToSnippet", replyToSnippet)
+                .addPayload("ttlSeconds", Math.max(0L, ttlSeconds));
         sendPacket(packet);
         return packet.getRequestId();
     }
@@ -789,15 +802,26 @@ public class NetworkService {
      * Chuyển tiếp tin nhắn (FORWARD_SEND) với ID chuỗi (UUID/msgId).
      */
     public String sendForward(String receiverId, String content, String originalSender, String originalMessageId) {
+        return sendForward(receiverId, content, originalSender, originalMessageId, 0L);
+    }
+
+    public String sendForward(String receiverId, String content, String originalSender, String originalMessageId,
+                              long ttlSeconds) {
         if (isBlank(receiverId) || isBlank(content)) {
             return null;
         }
         Packet packet = new Packet(PacketType.FORWARD_SEND, currentUsername, receiverId.trim())
                 .addPayload("content", content)
                 .addPayload("originalSender", originalSender)
-                .addPayload("originalMessageId", originalMessageId);
+                .addPayload("originalMessageId", originalMessageId)
+                .addPayload("ttlSeconds", Math.max(0L, ttlSeconds));
         sendPacket(packet);
         return packet.getRequestId();
+    }
+
+    public String sendForward(String receiverId, String content, String originalSender, long originalMessageId,
+                              long ttlSeconds) {
+        return sendForward(receiverId, content, originalSender, String.valueOf(originalMessageId), ttlSeconds);
     }
 
     /**
@@ -805,6 +829,20 @@ public class NetworkService {
      */
     public String sendAvatar(String avatarBase64) {
         return sendAvatar(avatarBase64, "png");
+    }
+
+    public String sendHistoryRequest(String partnerUsername) {
+        if (isBlank(partnerUsername)) return null;
+        Packet packet = new Packet(PacketType.HISTORY_REQUEST, currentUsername, partnerUsername.trim())
+                .addPayload("partnerUsername", partnerUsername.trim());
+        sendPacket(packet);
+        return packet.getRequestId();
+    }
+
+    public void sendDeleteEphemeral(String msgId) {
+        if (isBlank(msgId)) return;
+        sendPacket(new Packet(PacketType.DELETE_EPHEMERAL, currentUsername, SERVER_ID)
+                .addPayload("msgId", msgId));
     }
 
     /**

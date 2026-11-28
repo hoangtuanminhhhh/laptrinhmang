@@ -42,6 +42,9 @@ public class EmojiPickerPopup extends Popup {
 
     private final FlowPane emojiGrid = new FlowPane();
     private Consumer<String> onEmojiSelected;
+    private TextInputControl targetInput;
+    private int selectionStart;
+    private int selectionEnd;
 
     /** Tạo hộp chọn emoji không đăng ký hàm xử lý sau khi chọn. */
     public EmojiPickerPopup() {
@@ -80,6 +83,9 @@ public class EmojiPickerPopup extends Popup {
         }
 
         Window owner = anchorNode.getScene().getWindow();
+        this.targetInput = targetInput;
+        selectionStart = Math.min(targetInput.getAnchor(), targetInput.getCaretPosition());
+        selectionEnd = Math.max(targetInput.getAnchor(), targetInput.getCaretPosition());
         Bounds screenBounds = anchorNode.localToScreen(anchorNode.getBoundsInLocal());
         if (screenBounds == null) {
             throw new IllegalStateException("Không xác định được tọa độ màn hình của nút neo.");
@@ -153,10 +159,13 @@ public class EmojiPickerPopup extends Popup {
     }
 
     private void insertEmoji(TextInputControl targetInput, String emoji) {
-        int caret = targetInput.getCaretPosition();
-        targetInput.insertText(caret, emoji);
-        targetInput.positionCaret(caret + emoji.length());
+        if (this.targetInput != targetInput) {
+            return;
+        }
+        targetInput.replaceText(selectionStart, selectionEnd, emoji);
+        targetInput.positionCaret(selectionStart + emoji.length());
         hide();
+        this.targetInput = null;
         onEmojiSelected.accept(emoji);
     }
 }

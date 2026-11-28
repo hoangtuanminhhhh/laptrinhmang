@@ -1,415 +1,554 @@
 package com.chat.client;
 
+import com.chat.client.component.AvatarHelper;
+import com.chat.client.component.AvatarView;
+import com.chat.client.component.DisappearingMessageTimer;
+import com.chat.client.component.EmojiPickerPopup;
+import com.chat.client.component.ForwardDialog;
+import com.chat.client.component.MessageCellFactory;
+import com.chat.client.component.ReplyPreviewBar;
 import com.chat.client.component.SoundManager;
 import com.chat.client.net.NetworkEventListener;
 import com.chat.client.net.NetworkService;
+import com.chat.common.model.Message;
 import com.chat.common.protocol.Packet;
 import com.chat.common.protocol.PacketType;
 import javafx.animation.KeyFrame;
-import javafx.animation.PauseTransition;
 import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
-import javafx.scene.control.TextArea;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
+import javafx.scene.image.Image;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
+import javafx.stage.FileChooser;
 import javafx.util.Duration;
 
-public class MainChatController implements NetworkEventListener {
+import java.io.File;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
-    @FXML private TextArea chatTextArea;
+public class MainChatController implements NetworkEventListener {
+    private static final String ROOM = "ALL";
+    private static final String ROOM_LABEL = "🌐 Phòng chat chung";
+
+    @FXML private StackPane ownAvatarSlot;
+    @FXML private Label currentUserLabel;
+    @FXML private Button changeAvatarButton;
+    @FXML private Label conversationTitle;
+    @FXML private Label ephemeralCountLabel;
+    @FXML private Button muteButton;
+    @FXML private ListView<ChatUser> userListView;
+    @FXML private ScrollPane messageScrollPane;
+    @FXML private VBox messageContainer;
+    @FXML private VBox replyHolder;
     @FXML private TextField messageField;
     @FXML private Button sendButton;
-    @FXML private Button muteButton;
-    @FXML private ListView<String> userListView;
-
-    // Thành phần Status Bar ở đáy ứng dụng
+    @FXML private Button emojiButton;
+    @FXML private ComboBox<String> ttlComboBox;
     @FXML private Circle statusCircle;
     @FXML private Label statusLabel;
     @FXML private Button reconnectButton;
 
-    // Danh sách mẫu người dùng cho Sidebar (có thể cập nhật động sau)
-    private final ObservableList<String> userList = FXCollections.observableArrayList(
-        "User_A (Online)",
-        "User_B (Offline)",
-        "User_C (Online)"
-    );
-
+    private final NetworkService service = NetworkService.getInstance();
+    private final NetworkEventListener fxListener = NetworkEventListener.onFxThread(this);
+    private final ObservableList<ChatUser> contacts = FXCollections.observableArrayList();
+    private final Map<String, ChatUser> usersByName = new LinkedHashMap<>();
+    private final Map<String, List<ChatEntry>> conversations = new HashMap<>();
+    private final Map<String, Integer> unreadCounts = new HashMap<>();
+    private final Map<String, HBox> rowsByMessageId = new HashMap<>();
+    private final AvatarView ownAvatar = new AvatarView();
+    private final ReplyPreviewBar replyPreviewBar = new ReplyPreviewBar();
+    private final EmojiPickerPopup emojiPicker = new EmojiPickerPopup();
+    private final Timeline activeMessageTimeline = new Timeline(new KeyFrame(Duration.seconds(1), e -> refreshEphemeralCount()));
+    private String currentUsername = NetworkService.GUEST_USER;
+    private String currentAvatar;
+    private String activePeer = ROOM;
+    private String replyToId;
+    private String replyToSender;
+    private String replyToSnippet;
     private Timeline backoffCountdownTimeline;
-    private PauseTransition sendStatusTransition;
-    private boolean reconnectingCycle = false;
-    private long countdownRemainingSec = 0L;
+    private long countdownRemainingSec;
+    private int reconnectAttempt;
+    private boolean reconnectingCycle;
 
-    @FXML
-    public void initialize() {
-        // Đăng ký nhận sự kiện mạng tự động chuyển về JavaFX Application Thread qua FxNetworkEventListener
-        NetworkService.getInstance().setUiEventListener(this);
-
-        updateMuteButton();
-        if (muteButton != null) {
-            muteButton.setOnAction(event -> {
-                SoundManager soundManager = SoundManager.getInstance();
-                soundManager.setMuted(!soundManager.isMuted());
-                updateMuteButton();
-            });
-        }
-
-        // Cấu hình hiển thị danh sách người dùng bên Sidebar với chấm trạng thái Xanh/Xám
-        userListView.setItems(userList);
-        userListView.setCellFactory(param -> new ListCell<String>() {
-            private final Circle cellCircle = new Circle(5);
-            private final Label cellLabel = new Label();
-            private final HBox cellContainer = new HBox(10, cellCircle, cellLabel);
-
-            @Override
-            protected void updateItem(String user, boolean empty) {
-                super.updateItem(user, empty);
-                if (empty || user == null) {
-                    setText(null);
-                    setGraphic(null);
-                } else {
-                    cellLabel.setText(user);
-                    if (user.contains("Online")) {
-                        cellCircle.setFill(Color.GREEN);
-                    } else {
-                        cellCircle.setFill(Color.GRAY);
-                    }
-                    setGraphic(cellContainer);
-                }
-            }
+    @FXML public void initialize() {
+        ownAvatar.setSize(40);
+        ownAvatarSlot.getChildren().setAll(ownAvatar);
+        replyHolder.getChildren().setAll(replyPreviewBar);
+        service.addEventListener(fxListener);
+        userListView.setItems(contacts);
+        userListView.setCellFactory(view -> new ContactCell());
+        userListView.getSelectionModel().selectedItemProperty().addListener((obs, old, selected) -> {
+            if (selected != null) openConversation(selected);
         });
-
-        // Xử lý sự kiện click chọn user trong danh sách
-        userListView.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
-            if (newValue != null) {
-                System.out.println("Đang mở cuộc trò chuyện với: " + newValue);
-            }
-        });
-
-        // Xử lý sự kiện khi bấm nút Gửi hoặc nhấn Enter
         sendButton.setOnAction(event -> handleSendMessage());
         messageField.setOnAction(event -> handleSendMessage());
-        if (reconnectButton != null) {
-            reconnectButton.setOnAction(event -> handleManualReconnect());
-        }
-
-        // Đồng bộ trạng thái kết nối thực tế thay vì hardcode
+        emojiButton.setOnAction(event -> emojiPicker.show(emojiButton, messageField));
+        muteButton.setOnAction(event -> {
+            SoundManager sound = SoundManager.getInstance();
+            sound.setMuted(!sound.isMuted());
+            updateMuteButton();
+        });
+        changeAvatarButton.setOnAction(event -> chooseAvatar());
+        reconnectButton.setOnAction(event -> handleManualReconnect());
+        ttlComboBox.setItems(FXCollections.observableArrayList(
+                "⏳ Không tự hủy", "🔥 Tự hủy 5s", "⏳ Tự hủy 10s", "⏳ Tự hủy 30s"));
+        ttlComboBox.getSelectionModel().selectFirst();
+        activeMessageTimeline.setCycleCount(Timeline.INDEFINITE);
+        activeMessageTimeline.play();
+        updateMuteButton();
         syncInitialConnectionState();
+        contacts.setAll(new ChatUser(ROOM, ROOM_LABEL, true, null, true));
+        userListView.getSelectionModel().selectFirst();
     }
 
-    private void syncInitialConnectionState() {
-        NetworkService service = NetworkService.getInstance();
-        if (service.isConnected()) {
-            setMessagingEnabled(true);
-            setReconnectButtonVisible(false, false);
-            updateStatusIndicator("GREEN", formatConnectedStatus());
-        } else if (service.isConnecting()) {
-            setMessagingEnabled(false);
-            setReconnectButtonVisible(true, true);
-            updateStatusIndicator("YELLOW", "Đang kết nối tới " + formatEndpoint() + "...");
-        } else {
-            setMessagingEnabled(false);
-            setReconnectButtonVisible(false, false);
-            updateStatusIndicator("GRAY", "Chưa kết nối tới Server");
-        }
+    public void setSession(String username, String avatar, List<Map<String, Object>> users) {
+        currentUsername = username == null ? NetworkService.GUEST_USER : username;
+        currentAvatar = avatar;
+        service.setCurrentUsername(currentUsername);
+        currentUserLabel.setText(currentUsername);
+        ownAvatar.setName(currentUsername);
+        ownAvatar.setImage(AvatarHelper.base64ToImage(avatar));
+        updateUsers(users);
+        userListView.getSelectionModel().selectFirst();
+    }
+
+    private void updateUsers(List<Map<String, Object>> users) {
+        usersByName.clear();
+        if (users != null) for (Map<String, Object> data : users) addOrUpdateUser(data);
+        rebuildContacts();
+    }
+
+    private void addOrUpdateUser(Map<String, Object> data) {
+        String username = text(data.get("username"));
+        if (username == null || username.equalsIgnoreCase(currentUsername)) return;
+        boolean online = Boolean.TRUE.equals(data.get("online")) || "ONLINE".equalsIgnoreCase(text(data.get("status")));
+        String avatar = text(data.get("avatar"));
+        ChatUser existing = usersByName.get(username.toLowerCase());
+        if (existing != null && avatar == null) avatar = existing.avatar;
+        usersByName.put(username.toLowerCase(), new ChatUser(username, username, online, avatar, false));
+    }
+
+    private void rebuildContacts() {
+        List<ChatUser> list = new ArrayList<>();
+        list.add(new ChatUser(ROOM, ROOM_LABEL, true, null, true));
+        usersByName.values().stream().sorted((a, b) -> a.username.compareToIgnoreCase(b.username)).forEach(list::add);
+        contacts.setAll(list);
+        ChatUser selected = list.stream().filter(user -> user.room ? ROOM.equals(activePeer)
+                : user.username.equalsIgnoreCase(activePeer)).findFirst().orElse(list.get(0));
+        userListView.getSelectionModel().select(selected);
+    }
+
+    private void openConversation(ChatUser user) {
+        activePeer = user.room ? ROOM : user.username;
+        replyPreviewBar.clear();
+        replyToId = replyToSender = replyToSnippet = null;
+        conversationTitle.setText(user.room ? "🌐 Phòng chat chung (Tất cả mọi người)"
+                : "💬 Đang trò chuyện với: " + user.username + (user.online ? " (Online)" : " (Offline)"));
+        unreadCounts.remove(user.username.toLowerCase());
+        userListView.refresh();
+        displayConversation(activePeer);
+        if (service.isConnected()) service.sendHistoryRequest(user.room ? ROOM : user.username);
+    }
+
+    private void displayConversation(String peer) {
+        messageContainer.getChildren().clear();
+        rowsByMessageId.clear();
+        for (ChatEntry entry : conversations.getOrDefault(conversationKey(peer), List.of())) renderEntry(entry);
+        scrollToBottom();
+    }
+
+    private String conversationKey(String peer) {
+        if (ROOM.equalsIgnoreCase(peer)) return ROOM;
+        return currentUsername.compareToIgnoreCase(peer) <= 0
+                ? currentUsername.toLowerCase() + "|" + peer.toLowerCase()
+                : peer.toLowerCase() + "|" + currentUsername.toLowerCase();
     }
 
     private void handleSendMessage() {
-        if (messageField == null) {
-            return;
+        String content = messageField.getText() == null ? "" : messageField.getText().trim();
+        if (content.isEmpty() || !service.isConnected()) return;
+        long ttl = selectedTtl();
+        String id;
+        if (replyToId != null) {
+            id = service.sendReply(activePeer, content, replyToId, replyToSender, replyToSnippet, ttl);
+        } else {
+            id = service.sendMessage(activePeer, content, ttl);
         }
-        String raw = messageField.getText();
-        String trimmed = raw == null ? "" : raw.trim();
-        if (trimmed.isEmpty()) {
-            return;
-        }
-
-        NetworkService service = NetworkService.getInstance();
-        if (!service.isConnected()) {
-            updateStatusIndicator("RED", "Chưa kết nối tới Server. Đang chờ kết nối lại...");
-            setReconnectButtonVisible(true, service.isConnecting());
-            return;
-        }
-
-        updateStatusIndicator("YELLOW", "Đang gửi tin nhắn...");
-        service.sendEchoMessage(trimmed);
+        if (id == null) return;
+        ChatEntry entry = new ChatEntry(newMessage(id, currentUsername, content, ttl, replyToId,
+                replyToSender, replyToSnippet, null, null, false), currentUsername, currentAvatar, activePeer, ttl);
+        addEntry(entry, true);
+        if (ttl > 0) attachTimer(entry);
         messageField.clear();
+        replyPreviewBar.clear();
+        replyToId = replyToSender = replyToSnippet = null;
+        updateStatus("GREEN", "Đã gửi tới " + activePeer);
+    }
 
-        if (sendStatusTransition != null) {
-            sendStatusTransition.stop();
+    private long selectedTtl() {
+        String selection = ttlComboBox.getValue();
+        if (selection == null) return 0;
+        if (selection.contains("5s")) return 5;
+        if (selection.contains("10s")) return 10;
+        if (selection.contains("30s")) return 30;
+        return 0;
+    }
+
+    private Message newMessage(String id, String sender, String content, long ttl, String replyId,
+                               String replySender, String replySnippet, String originalSender,
+                               String originalId, boolean forwarded) {
+        Message message = new Message();
+        message.setMsgId(id);
+        message.setSenderUsername(sender);
+        message.setContent(content);
+        message.setTimestamp(System.currentTimeMillis());
+        message.setReplyTo(replyId);
+        message.setReplyToSender(replySender);
+        message.setReplyToSnippet(replySnippet);
+        message.setOriginalSender(originalSender);
+        message.setOriginalMessageId(originalId);
+        message.setForwarded(forwarded);
+        return message;
+    }
+
+    private void addEntry(ChatEntry entry, boolean own) {
+        String key = conversationKey(entry.peer);
+        conversations.computeIfAbsent(key, ignored -> new ArrayList<>()).add(entry);
+        if (entry.peer.equalsIgnoreCase(activePeer)) renderEntry(entry);
+        else if (!own && !entry.sender.equalsIgnoreCase(currentUsername)) {
+            unreadCounts.merge(entry.sender.toLowerCase(), 1, Integer::sum);
+            userListView.refresh();
         }
-        sendStatusTransition = new PauseTransition(Duration.millis(180));
-        sendStatusTransition.setOnFinished(e -> {
-            if (service.isConnected()) {
-                updateStatusIndicator("GREEN", formatConnectedStatus());
+        if (entry.peer.equalsIgnoreCase(activePeer)) scrollToBottom();
+    }
+
+    private void renderEntry(ChatEntry entry) {
+        boolean own = entry.sender.equalsIgnoreCase(currentUsername);
+        ChatUser sender = usersByName.get(entry.sender.toLowerCase());
+        String senderName = own ? currentUsername : entry.sender;
+        Image avatar = AvatarHelper.base64ToImage(own ? currentAvatar : entry.avatar);
+        String replySnippet = entry.message.getReplyToSnippet();
+        LocalDateTime sentAt = entry.message.getTimestamp() > 0
+                ? LocalDateTime.ofInstant(Instant.ofEpochMilli(entry.message.getTimestamp()), ZoneId.systemDefault()) : LocalDateTime.now();
+        HBox row = MessageCellFactory.createMessageRow(entry.message, own,
+                (action, message) -> handleMessageAction(action, message), senderName,
+                replySnippet, entry.message.getOriginalSender(), sentAt, avatar);
+        if (entry.message.getMsgId() != null) rowsByMessageId.put(entry.message.getMsgId(), row);
+        messageContainer.getChildren().add(row);
+        if (entry.ttlSeconds > 0) attachTimer(entry, row);
+    }
+
+    private void attachTimer(ChatEntry entry) { HBox row = rowsByMessageId.get(entry.message.getMsgId()); if (row != null) attachTimer(entry, row); }
+
+    private void attachTimer(ChatEntry entry, HBox row) {
+        if (DisappearingMessageTimer.getInstance().isScheduled(entry.message.getMsgId())) return;
+        DisappearingMessageTimer.getInstance().attachCountdownBadge(row, entry.message.getMsgId(), entry.ttlSeconds,
+                messageContainer, () -> {
+                    conversations.values().forEach(items -> items.removeIf(item -> entry.message.getMsgId().equals(item.message.getMsgId())));
+                    rowsByMessageId.remove(entry.message.getMsgId());
+                    service.sendDeleteEphemeral(entry.message.getMsgId());
+                    refreshEphemeralCount();
+                });
+        refreshEphemeralCount();
+    }
+
+    private void handleMessageAction(String action, Message message) {
+        if ("REPLY".equals(action)) {
+            replyToId = message.getMsgId();
+            replyToSender = message.getSenderUsername() == null ? currentUsername : message.getSenderUsername();
+            replyToSnippet = message.getContent();
+            replyPreviewBar.showReply(replyToId, replyToSender, replyToSnippet);
+            messageField.requestFocus();
+        } else if ("FORWARD".equals(action)) {
+            List<ForwardDialog.Friend> friends = new ArrayList<>();
+            friends.add(new ForwardDialog.Friend(ROOM, ROOM_LABEL, true, null));
+            for (ChatUser user : usersByName.values()) friends.add(new ForwardDialog.Friend(user.username,
+                    user.username, user.online, AvatarHelper.base64ToImage(user.avatar)));
+            new ForwardDialog(messageField.getScene().getWindow(), message.getContent(), friends)
+                    .showAndWait().ifPresent(receiver -> {
+                        String id = service.sendForward(receiver, message.getContent(),
+                                message.getSenderUsername(), message.getMsgId(), selectedTtl());
+                        if (id != null && receiver.equalsIgnoreCase(activePeer)) {
+                            ChatEntry forwarded = new ChatEntry(newMessage(id, currentUsername, message.getContent(),
+                                    selectedTtl(), null, null, null, message.getSenderUsername(), message.getMsgId(), true),
+                                    currentUsername, currentAvatar, receiver, selectedTtl());
+                            addEntry(forwarded, true);
+                        }
+                    });
+        }
+    }
+
+    private void chooseAvatar() {
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Chọn ảnh Avatar");
+        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Ảnh PNG/JPG", "*.png", "*.jpg", "*.jpeg"));
+        File file = chooser.showOpenDialog(changeAvatarButton.getScene().getWindow());
+        if (file == null) return;
+        try {
+            String encoded = AvatarHelper.imageToBase64(file, 128, 128);
+            currentAvatar = encoded;
+            ownAvatar.setImage(AvatarHelper.base64ToImage(encoded));
+            service.sendAvatar(encoded);
+        } catch (Exception exception) {
+            updateStatus("RED", "Không thể đổi avatar: " + exception.getMessage());
+        }
+    }
+
+    private void refreshEphemeralCount() {
+        if (ephemeralCountLabel != null) {
+            int count = DisappearingMessageTimer.getInstance().getActiveCount();
+            ephemeralCountLabel.setText(count > 0 ? "⏳ " + count : "");
+        }
+    }
+
+    private void scrollToBottom() {
+        Platform.runLater(() -> messageScrollPane.setVvalue(1.0));
+    }
+
+    @Override public void onConnecting(String ip, int port) {
+        runFx(() -> { setMessagingEnabled(false); updateStatus("YELLOW", "Đang kết nối tới " + ip + ":" + port + "..."); });
+    }
+    @Override public void onConnected() { runFx(() -> { setMessagingEnabled(true); if (!reconnectingCycle) updateStatus("GREEN", "Đã kết nối tới máy chủ"); }); }
+    @Override public void onConnectionLost() { runFx(() -> { reconnectingCycle = true; setMessagingEnabled(false); updateStatus("RED", "Mất kết nối. Đang tự động kết nối lại..."); }); }
+    @Override public void onDisconnected() { runFx(() -> { if (!service.isNetworkLost()) { setMessagingEnabled(false); updateStatus("GRAY", "Đã ngắt kết nối"); } }); }
+    @Override public void onReconnecting(int attempt, long delayMs) {
+        runFx(() -> {
+            reconnectAttempt = attempt;
+            if (backoffCountdownTimeline != null) backoffCountdownTimeline.stop();
+            if (delayMs <= 0) { updateStatus("YELLOW", "Đang thử kết nối lại ngay (lần " + attempt + ")..."); return; }
+            countdownRemainingSec = Math.max(1, Math.round(delayMs / 1000.0));
+            updateStatus("RED", "Mất kết nối. Thử lại sau " + countdownRemainingSec + "s");
+            backoffCountdownTimeline = new Timeline(new KeyFrame(Duration.seconds(1), event -> {
+                countdownRemainingSec = Math.max(0, countdownRemainingSec - 1);
+                updateStatus("RED", "Mất kết nối. Thử lại sau " + countdownRemainingSec + "s");
+            }));
+            backoffCountdownTimeline.setCycleCount((int) Math.max(1, countdownRemainingSec));
+            backoffCountdownTimeline.playFromStart();
+        });
+    }
+    @Override public void onReconnected() { runFx(() -> { reconnectingCycle = false; if (backoffCountdownTimeline != null) backoffCountdownTimeline.stop(); setMessagingEnabled(true); updateStatus("GREEN", "Đã khôi phục kết nối"); }); }
+    @Override public void onReconnectGaveUp() { runFx(() -> updateStatus("RED", "Không thể kết nối lại; hãy thử kết nối thủ công.")); }
+
+    @Override public void onPacketReceived(Packet packet) {
+        runFx(() -> {
+            switch (packet.getType()) {
+                case LOGIN_RESPONSE -> handleLoginResponse(packet);
+                case USER_STATUS_CHANGE -> handleUserStatus(packet);
+                case AVATAR_UPDATE -> handleAvatarUpdate(packet);
+                case MESSAGE_RECEIVE, REPLY_RECEIVE, FORWARD_RECEIVE -> handleIncomingMessage(packet);
+                case HISTORY_RESPONSE -> handleHistory(packet);
+                case CHAT_ACK -> {
+                    Object status = packet.getPayloadValue("status");
+                    if ("FAILED".equals(status)) updateStatus("RED", text(packet.getPayloadValue("message")));
+                }
+                case ERROR_RESPONSE -> updateStatus("RED", text(packet.getPayloadValue("message")));
+                default -> { }
             }
         });
-        sendStatusTransition.playFromStart();
     }
 
-    private void handleManualReconnect() {
-        NetworkService service = NetworkService.getInstance();
-        if (service.retryReconnectNow() && !service.isConnected()) {
-            setReconnectButtonVisible(true, true);
-            updateStatusIndicator("YELLOW", "Đang thử kết nối lại ngay...");
+    private void handleLoginResponse(Packet packet) {
+        if (!Boolean.TRUE.equals(packet.getPayloadValue("success"))) return;
+        String avatar = text(packet.getPayloadValue("avatar"));
+        if (avatar != null) {
+            currentAvatar = avatar;
+            ownAvatar.setImage(AvatarHelper.base64ToImage(avatar));
         }
-    }
-
-    /**
-     * Hàm tiện ích thay đổi màu sắc đèn (Xanh, Vàng, Đỏ, Xám) và nội dung trên Status Bar.
-     */
-    private void updateStatusIndicator(String colorCode, String message) {
-        if (statusCircle != null && statusLabel != null) {
-            switch (colorCode.toUpperCase()) {
-                case "GREEN":
-                    statusCircle.setFill(Color.GREEN);
-                    break;
-                case "YELLOW":
-                    statusCircle.setFill(Color.GOLD);
-                    break;
-                case "RED":
-                    statusCircle.setFill(Color.RED);
-                    break;
-                default:
-                    statusCircle.setFill(Color.GRAY);
+        Object rawUsers = packet.getPayloadValue("users");
+        if (rawUsers instanceof List<?> list) {
+            List<Map<String, Object>> data = new ArrayList<>();
+            for (Object item : list) if (item instanceof Map<?, ?> map) {
+                Map<String, Object> row = new HashMap<>();
+                map.forEach((key, value) -> row.put(String.valueOf(key), value));
+                data.add(row);
             }
-            statusLabel.setText(message);
+            updateUsers(data);
         }
+    }
+
+    private void handleUserStatus(Packet packet) {
+        Map<String, Object> data = packet.getPayloadMap();
+        addOrUpdateUser(data);
+        rebuildContacts();
+    }
+
+    private void handleAvatarUpdate(Packet packet) {
+        String username = text(packet.getPayloadValue("username"));
+        String avatar = text(packet.getPayloadValue("avatarBase64"));
+        if (username == null) return;
+        if (username.equalsIgnoreCase(currentUsername)) {
+            currentAvatar = avatar;
+            ownAvatar.setImage(AvatarHelper.base64ToImage(avatar));
+        } else {
+            ChatUser existing = usersByName.get(username.toLowerCase());
+            if (existing != null) usersByName.put(username.toLowerCase(), new ChatUser(existing.username,
+                    existing.displayName, existing.online, avatar, false));
+            rebuildContacts();
+        }
+    }
+
+    private void handleIncomingMessage(Packet packet) {
+        String sender = packet.getSender() == null ? "" : packet.getSender();
+        String receiver = packet.getReceiver() == null ? currentUsername : packet.getReceiver();
+        String content = text(packet.getPayloadValue("content"));
+        String id = text(packet.getPayloadValue("msgId"));
+        if (id == null) id = text(packet.getPayloadValue("messageId"));
+        if (id == null) id = packet.getRequestId();
+        long ttl = number(packet.getPayloadValue("ttlSeconds"), 0);
+        String peer = ROOM.equalsIgnoreCase(receiver) ? ROOM
+                : sender.equalsIgnoreCase(currentUsername) ? receiver : sender;
+        String replyId = text(packet.getPayloadValue("replyToMessageId"));
+        Message message = newMessage(id, sender, content, ttl, replyId,
+                text(packet.getPayloadValue("replyToSender")), text(packet.getPayloadValue("replyToSnippet")),
+                text(packet.getPayloadValue("originalSender")), text(packet.getPayloadValue("originalMessageId")),
+                packet.getType() == PacketType.FORWARD_RECEIVE);
+        message.setTimestamp(number(packet.getPayloadValue("timestamp"), packet.getTimestamp()));
+        ChatUser user = usersByName.get(sender.toLowerCase());
+        ChatEntry entry = new ChatEntry(message, sender, user == null ? null : user.avatar, peer, ttl);
+        addEntry(entry, sender.equalsIgnoreCase(currentUsername));
+        if (!sender.equalsIgnoreCase(currentUsername)) SoundManager.getInstance().playNotificationSound();
+        if (ttl > 0) attachTimer(entry);
+    }
+
+    private void handleHistory(Packet packet) {
+        String peer = text(packet.getPayloadValue("partnerUsername"));
+        if (peer == null || !peer.equalsIgnoreCase(activePeer)) return;
+        String key = conversationKey(peer);
+        conversations.put(key, new ArrayList<>());
+        messageContainer.getChildren().clear();
+        rowsByMessageId.clear();
+        Object raw = packet.getPayloadValue("messages");
+        if (raw instanceof List<?> messages) for (Object item : messages) if (item instanceof Map<?, ?> map) {
+            String sender = text(map.get("sender"));
+            String id = text(map.get("msgId"));
+            Message message = newMessage(id, sender, text(map.get("content")), 0,
+                    text(map.get("replyToMessageId")), text(map.get("replyToSender")),
+                    text(map.get("replyToSnippet")), text(map.get("originalSender")),
+                    text(map.get("originalMessageId")), Boolean.TRUE.equals(map.get("forwarded")));
+            message.setTimestamp(number(map.get("timestamp"), 0));
+            ChatUser user = usersByName.get(sender == null ? "" : sender.toLowerCase());
+            ChatEntry entry = new ChatEntry(message, sender, user == null ? null : user.avatar, peer, 0);
+            conversations.get(key).add(entry);
+            renderEntry(entry);
+        }
+        scrollToBottom();
+    }
+
+    private void chooseManualReconnect() { }
+    private void handleManualReconnect() {
+        if (service.retryReconnectNow() && !service.isConnected()) {
+            reconnectButton.setDisable(true);
+            updateStatus("YELLOW", "Đang thử kết nối lại ngay...");
+        }
+    }
+
+    private void syncInitialConnectionState() {
+        if (service.isConnected()) { setMessagingEnabled(true); updateStatus("GREEN", "Đã kết nối tới Server"); }
+        else { setMessagingEnabled(false); updateStatus("GRAY", "Chưa kết nối tới Server"); }
     }
 
     private void setMessagingEnabled(boolean enabled) {
-        if (sendButton != null) {
-            sendButton.setDisable(!enabled);
-        }
-        if (messageField != null) {
-            messageField.setDisable(!enabled);
-            messageField.setPromptText(enabled ? "Nhập tin nhắn..." : "Đang mất kết nối, vui lòng chờ...");
-            if (enabled) {
-                messageField.requestFocus();
-            }
-        }
+        messageField.setDisable(!enabled);
+        sendButton.setDisable(!enabled);
+        messageField.setPromptText(enabled ? "Nhập tin nhắn..." : "Đang mất kết nối...");
+        reconnectButton.setVisible(!enabled);
+        reconnectButton.setManaged(!enabled);
+        reconnectButton.setDisable(false);
     }
 
-    private void setReconnectButtonVisible(boolean visible, boolean disable) {
-        if (reconnectButton != null) {
-            reconnectButton.setVisible(visible);
-            reconnectButton.setManaged(visible);
-            reconnectButton.setDisable(disable);
-        }
-    }
-
-    private String formatEndpoint() {
-        NetworkService service = NetworkService.getInstance();
-        String host = service.getLastIp() != null ? service.getLastIp() : service.getDefaultIp();
-        int port = service.getLastPort() > 0 ? service.getLastPort() : service.getDefaultPort();
-        return host + ":" + port;
-    }
-
-    private String formatConnectedStatus() {
-        return "Đã kết nối tới Server [" + formatEndpoint() + "]";
-    }
-
-    private void startBackoffCountdown(int attempt, long initialSec) {
-        stopBackoffCountdown();
-        countdownRemainingSec = initialSec;
-        updateStatusIndicator("RED", "Mất kết nối. Tự thử lại lần #" + attempt + " sau " + countdownRemainingSec + "s...");
-
-        backoffCountdownTimeline = new Timeline(new KeyFrame(Duration.seconds(1), e -> {
-            countdownRemainingSec--;
-            if (countdownRemainingSec > 0) {
-                updateStatusIndicator("RED", "Mất kết nối. Tự thử lại lần #" + attempt + " sau " + countdownRemainingSec + "s...");
-            } else {
-                stopBackoffCountdown();
-                setReconnectButtonVisible(true, true);
-                updateStatusIndicator("YELLOW", "Đang thử kết nối lại tới " + formatEndpoint() + "... (Lần #" + attempt + ")");
-            }
-        }));
-        backoffCountdownTimeline.setCycleCount((int) Math.max(1L, initialSec));
-        backoffCountdownTimeline.playFromStart();
-    }
-
-    private void stopBackoffCountdown() {
-        if (backoffCountdownTimeline != null) {
-            backoffCountdownTimeline.stop();
-            backoffCountdownTimeline = null;
-        }
-    }
-
-    private void appendChatSystemLine(String text) {
-        if (chatTextArea != null) {
-            chatTextArea.appendText(text);
-            chatTextArea.positionCaret(chatTextArea.getLength());
-        }
-    }
-
-    private void runOnFxIfNeeded(Runnable action) {
-        if (Platform.isFxApplicationThread()) {
-            action.run();
-        } else {
-            Platform.runLater(action);
-        }
-    }
-
-    @Override
-    public void onConnecting(String ip, int port) {
-        runOnFxIfNeeded(() -> {
-            stopBackoffCountdown();
-            setMessagingEnabled(false);
-            setReconnectButtonVisible(reconnectingCycle, true);
-            appendChatSystemLine("[Hệ thống] Đang kết nối tới " + ip + ":" + port + "...\n");
-            updateStatusIndicator("YELLOW", "Đang kết nối tới " + ip + ":" + port + "...");
+    private void updateStatus(String color, String message) {
+        statusCircle.setFill(switch (color) {
+            case "GREEN" -> Color.web("#22C55E");
+            case "YELLOW" -> Color.web("#EAB308");
+            case "RED" -> Color.web("#EF4444");
+            default -> Color.web("#94A3B8");
         });
+        statusLabel.setText(message == null ? "" : message);
     }
 
-    @Override
-    public void onConnected() {
-        runOnFxIfNeeded(() -> {
-            stopBackoffCountdown();
-            setMessagingEnabled(true);
-            setReconnectButtonVisible(false, false);
-            if (!reconnectingCycle) {
-                appendChatSystemLine("[Hệ thống] Kết nối thành công tới Server (" + formatEndpoint() + ")!\n");
-            }
-            updateStatusIndicator("GREEN", formatConnectedStatus());
-        });
+    private void updateMuteButton() { muteButton.setText(SoundManager.getInstance().isMuted() ? "🔇" : "🔊"); }
+    private void runFx(Runnable action) { if (Platform.isFxApplicationThread()) action.run(); else Platform.runLater(action); }
+    private String text(Object value) { return value == null ? null : value.toString(); }
+    private long number(Object value, long fallback) {
+        if (value instanceof Number n) return n.longValue();
+        if (value != null) try { return Long.parseLong(value.toString()); } catch (NumberFormatException ignored) { }
+        return fallback;
     }
 
-    @Override
-    public void onConnectionLost() {
-        runOnFxIfNeeded(() -> {
-            reconnectingCycle = true;
-            stopBackoffCountdown();
-            setMessagingEnabled(false);
-            setReconnectButtonVisible(true, false);
-            appendChatSystemLine("[Hệ thống] Mất kết nối tới Server. Đang kích hoạt tự động kết nối lại...\n");
-            updateStatusIndicator("RED", "Mất kết nối tới Server. Đang chuẩn bị kết nối lại...");
-        });
+    @Override public void onError(String message, Throwable exception) {
+        runFx(() -> { if (!service.isConnected()) setMessagingEnabled(false); updateStatus("RED", message); });
     }
 
-    @Override
-    public void onDisconnected() {
-        runOnFxIfNeeded(() -> {
-            setMessagingEnabled(false);
-            if (!NetworkService.getInstance().isNetworkLost()) {
-                reconnectingCycle = false;
-                stopBackoffCountdown();
-                setReconnectButtonVisible(true, false);
-                appendChatSystemLine("[Hệ thống] Đã ngắt kết nối khỏi Server.\n");
-                updateStatusIndicator("GRAY", "Đã ngắt kết nối khỏi Server");
-            }
-        });
-    }
-
-    @Override
-    public void onReconnecting(int attempt, long delayMs) {
-        runOnFxIfNeeded(() -> {
-            reconnectingCycle = true;
-            setMessagingEnabled(false);
-            if (delayMs <= 0L) {
-                stopBackoffCountdown();
-                setReconnectButtonVisible(true, true);
-                appendChatSystemLine("[Hệ thống] Đang thử kết nối lại ngay (Lần #" + attempt + ")...\n");
-                updateStatusIndicator("YELLOW", "Đang thử kết nối lại ngay... (Lần #" + attempt + ")");
-            } else {
-                setReconnectButtonVisible(true, false);
-                long initialSec = Math.max(1L, Math.round(delayMs / 1000.0));
-                appendChatSystemLine("[Hệ thống] Tự động kết nối lại lần #" + attempt + " sau " + initialSec + "s...\n");
-                startBackoffCountdown(attempt, initialSec);
-            }
-        });
-    }
-
-    @Override
-    public void onReconnected() {
-        runOnFxIfNeeded(() -> {
-            reconnectingCycle = false;
-            stopBackoffCountdown();
-            setMessagingEnabled(true);
-            setReconnectButtonVisible(false, false);
-            appendChatSystemLine("[Hệ thống] Đã khôi phục kết nối tới Server thành công!\n");
-            updateStatusIndicator("GREEN", "Đã kết nối lại tới Server [" + formatEndpoint() + "]");
-        });
-    }
-
-    @Override
-    public void onReconnectGaveUp() {
-        runOnFxIfNeeded(() -> {
-            stopBackoffCountdown();
-            setMessagingEnabled(false);
-            setReconnectButtonVisible(true, false);
-            appendChatSystemLine("[Hệ thống] Đã thử kết nối lại tối đa số lần cho phép. Bấm 'Kết nối lại ngay' để thử lại.\n");
-            updateStatusIndicator("RED", "Không thể tự kết nối lại. Bấm 'Kết nối lại ngay' để thử lại.");
-        });
-    }
-
-    @Override
-    public void onPacketReceived(Packet packet) {
-        runOnFxIfNeeded(() -> {
-            if (packet != null) {
-                appendChatSystemLine("Server: " + packet.getPayload() + "\n");
-                if (isIncomingMessage(packet)) {
-                    SoundManager.getInstance().playNotificationSound();
-                }
-                updateStatusIndicator("GREEN", "Đã nhận phản hồi từ Server [" + formatEndpoint() + "]");
-            }
-        });
-    }
-
-    private boolean isIncomingMessage(Packet packet) {
-        PacketType type = packet.getType();
-        if (type != PacketType.MESSAGE_RECEIVE
-                && type != PacketType.REPLY_RECEIVE
-                && type != PacketType.FORWARD_RECEIVE) {
-            return false;
-        }
-        String sender = packet.getSender();
-        String currentUser = NetworkService.getInstance().getCurrentUsername();
-        return sender == null || currentUser == null || !sender.equalsIgnoreCase(currentUser);
-    }
-
-    private void updateMuteButton() {
-        if (muteButton == null) {
-            return;
-        }
-        boolean muted = SoundManager.getInstance().isMuted();
-        muteButton.setText(muted ? "🔇" : "🔊");
-        muteButton.setAccessibleText(muted
-                ? "Bật âm thanh thông báo"
-                : "Tắt âm thanh thông báo");
-    }
-
-    @Override
-    public void onError(String friendlyMessage, Throwable exception) {
-        runOnFxIfNeeded(() -> {
-            appendChatSystemLine("[Lỗi] " + friendlyMessage + "\n");
-            NetworkService service = NetworkService.getInstance();
-            if (!service.isConnected()) {
-                setMessagingEnabled(false);
-                setReconnectButtonVisible(true, service.isConnecting());
-                if (!service.isReconnecting()) {
-                    updateStatusIndicator("RED", "Lỗi kết nối: " + friendlyMessage);
-                }
-            }
-        });
-    }
-
-    /**
-     * Giải phóng các timer giao diện và hủy đăng ký listener khi đóng cửa sổ chat.
-     */
     public void dispose() {
-        stopBackoffCountdown();
-        if (sendStatusTransition != null) {
-            sendStatusTransition.stop();
-            sendStatusTransition = null;
+        service.removeEventListener(fxListener);
+        activeMessageTimeline.stop();
+        if (backoffCountdownTimeline != null) backoffCountdownTimeline.stop();
+        emojiPicker.hide();
+    }
+
+    private final class ContactCell extends ListCell<ChatUser> {
+        private final HBox row = new HBox(9);
+        private final AvatarView avatar = new AvatarView();
+        private final Label name = new Label();
+        private final Circle dot = new Circle(4);
+        private final Label unread = new Label();
+        private final javafx.scene.layout.Region spacer = new javafx.scene.layout.Region();
+        private ContactCell() {
+            row.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+            javafx.scene.layout.HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS);
+            name.setStyle("-fx-font-size: 13px; -fx-text-fill: #0F172A;");
+            unread.setStyle("-fx-background-color: #EF4444; -fx-text-fill: white; -fx-background-radius: 12; -fx-padding: 2 6;");
+            row.getChildren().setAll(avatar, name, dot, spacer, unread);
         }
-        NetworkService.getInstance().removeEventListener(this);
+        @Override protected void updateItem(ChatUser user, boolean empty) {
+            super.updateItem(user, empty);
+            if (empty || user == null) { setGraphic(null); return; }
+            avatar.setSize(user.room ? 36 : 36);
+            avatar.setName(user.username);
+            avatar.setImage(AvatarHelper.base64ToImage(user.avatar));
+            name.setText(user.displayName);
+            dot.setFill(user.room ? Color.web("#22C55E") : user.online ? Color.web("#22C55E") : Color.web("#94A3B8"));
+            int count = unreadCounts.getOrDefault(user.username.toLowerCase(), 0);
+            unread.setText(count > 0 ? String.valueOf(count) : "");
+            unread.setVisible(count > 0);
+            unread.setManaged(count > 0);
+            setGraphic(row);
+        }
+    }
+
+    private static final class ChatUser {
+        private final String username, displayName, avatar;
+        private final boolean online, room;
+        private ChatUser(String username, String displayName, boolean online, String avatar, boolean room) {
+            this.username = username; this.displayName = displayName; this.online = online; this.avatar = avatar; this.room = room;
+        }
+    }
+
+    private static final class ChatEntry {
+        private final Message message;
+        private final String sender, avatar, peer;
+        private final long ttlSeconds;
+        private ChatEntry(Message message, String sender, String avatar, String peer, long ttlSeconds) {
+            this.message = message; this.sender = sender == null ? "" : sender; this.avatar = avatar; this.peer = peer; this.ttlSeconds = ttlSeconds;
+        }
     }
 }

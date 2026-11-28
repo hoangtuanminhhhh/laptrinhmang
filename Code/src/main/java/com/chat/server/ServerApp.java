@@ -10,7 +10,6 @@ public class ServerApp {
     public static void main(String[] args) {
         int port = 5000;
         int maxThreads = 50;
-        String dbPath = "data/chat.db";
 
         // Đọc cấu hình từ server.properties
         try (InputStream input = ServerApp.class.getClassLoader().getResourceAsStream("server.properties")) {
@@ -19,10 +18,10 @@ public class ServerApp {
                 prop.load(input);
 
                 port = Integer.parseInt(prop.getProperty("server.port", "5000"));
-                dbPath = prop.getProperty("database.path", "data/chat.db");
+                maxThreads = Integer.parseInt(prop.getProperty("server.max_connections", "50"));
 
                 System.out.println("[Config] Loaded Port: " + port);
-                System.out.println("[Config] Loaded DB Path: " + dbPath + " (Sẵn sàng cho Thành viên 2)");
+                System.out.println("[Config] Loaded Max Connections: " + maxThreads);
             } else {
                 System.out.println("[Config] Không tìm thấy server.properties ở src/main/resources, dùng cấu hình mặc định.");
             }

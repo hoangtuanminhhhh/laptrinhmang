@@ -22,7 +22,7 @@ public class DatabaseCleanupService {
     });
 
     public void start() {
-        scheduler.scheduleAtFixedRate(this::runCleanup, 0, 24, TimeUnit.HOURS);
+        scheduler.scheduleAtFixedRate(this::runCleanup, 24, 24, TimeUnit.HOURS);
         logger.info("Đã khởi động DatabaseCleanupService (chu kỳ: 24h/lần, lưu trữ tin nhắn: {} ngày).", MESSAGE_RETENTION_DAYS);
     }
 

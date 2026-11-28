@@ -10,7 +10,10 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import com.chat.server.db.DatabaseManager;
+import com.chat.server.service.DatabaseCleanupService;
 
 public class ChatServer {
     private static final int DEFAULT_QUEUE_CAPACITY = 200;
@@ -22,6 +25,8 @@ public class ChatServer {
     private final ServerMetrics metrics;
     private ServerSocket serverSocket;
     private volatile boolean isRunning = false;
+    private final AtomicBoolean stopped = new AtomicBoolean();
+    private final DatabaseCleanupService cleanupService = new DatabaseCleanupService();
 
     public ChatServer(int port, int maxThreads) {
         this(port, maxThreads, new ServerMetrics());
@@ -88,6 +93,8 @@ public class ChatServer {
 
     public void start() {
         try {
+            DatabaseManager.initialize();
+            cleanupService.start();
             // Backlog = 256 giúp OS kernel không rớt gói SYN khi nhiều client kết nối cùng lúc
             serverSocket = new ServerSocket(port, 256);
             isRunning = true;
@@ -129,9 +136,8 @@ public class ChatServer {
                 }
             }
         } catch (IOException e) {
-            if (isRunning) {
-                System.err.println("Server exception: " + e.getMessage());
-            }
+            String phase = isRunning ? "accepting client connections" : "binding server port " + port;
+            System.err.println("[ChatServer] Failed while " + phase + ": " + e.getMessage());
         } finally {
             stop();
         }
@@ -156,7 +162,11 @@ public class ChatServer {
     }
 
     public void stop() {
+        if (!stopped.compareAndSet(false, true)) {
+            return;
+        }
         isRunning = false;
+        cleanupService.stop();
         metrics.setOnlineClients(0);
         try {
             if (serverSocket != null && !serverSocket.isClosed()) {

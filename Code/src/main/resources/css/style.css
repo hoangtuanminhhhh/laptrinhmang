@@ -4,6 +4,23 @@
     -fx-font-smoothing-type: gray;
 }
 
+.login-root, .chat-content { -fx-background-color: #F8FAFC; }
+.login-title { -fx-font-size: 25px; -fx-font-weight: bold; -fx-text-fill: #0F172A; }
+.login-subtitle { -fx-font-size: 13px; -fx-text-fill: #64748B; }
+.profile-name, .sidebar-heading { -fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #0F172A; }
+.conversation-title { -fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #1E293B; }
+.sidebar { -fx-background-color: #FFFFFF; -fx-border-color: transparent #E2E8F0 transparent transparent; }
+.status-bar { -fx-background-color: #FFFFFF; -fx-border-color: #E2E8F0 transparent transparent transparent; }
+.message-scroll { -fx-background: #F8FAFC; -fx-background-color: transparent; }
+.message-scroll > .viewport { -fx-background-color: #F8FAFC; }
+.primary-button { -fx-background-color: #2563EB; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 7px; -fx-padding: 8px 14px; }
+.primary-button:hover { -fx-background-color: #1D4ED8; }
+.link-button { -fx-background-color: transparent; -fx-text-fill: #2563EB; -fx-padding: 0; -fx-font-size: 11px; }
+.tool-button { -fx-background-color: white; -fx-background-radius: 8px; -fx-font-size: 16px; }
+.form-status { -fx-font-size: 12px; }
+.form-status-error { -fx-text-fill: #DC2626; }
+.form-status-info { -fx-text-fill: #475569; }
+
 .chat-header {
     -fx-background-color: #FFFFFF;
     -fx-border-color: transparent transparent #E2E8F0 transparent;

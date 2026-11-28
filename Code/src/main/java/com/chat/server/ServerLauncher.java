@@ -11,7 +11,7 @@ public class ServerLauncher {
         ServerMonitorApp.attachMetrics(metrics);
 
         // <-- THÊM: chạy ChatServer trên luồng nền dùng chung metrics
-        ChatServer server = new ChatServer(8888, 10, metrics);
+        ChatServer server = new ChatServer(8888, 100, metrics);
         Thread serverThread = new Thread(server::start, "chat-server-thread");
         serverThread.setDaemon(true);
         serverThread.start();

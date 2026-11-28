@@ -15,6 +15,10 @@ CREATE TABLE IF NOT EXISTS messages (
     receiver_id INTEGER NOT NULL,
     content TEXT NOT NULL,
     reply_to TEXT,
+    reply_to_sender TEXT,
+    reply_to_snippet TEXT,
+    original_sender TEXT,
+    original_message_id TEXT,
     is_forwarded INTEGER DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (sender_id) REFERENCES users(id),
@@ -28,6 +32,15 @@ CREATE TABLE IF NOT EXISTS offline_queue (
     message_id INTEGER NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(id),
     FOREIGN KEY (message_id) REFERENCES messages(id)
+);
+
+CREATE TABLE IF NOT EXISTS room_messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    msg_id TEXT UNIQUE NOT NULL,
+    sender TEXT NOT NULL,
+    content TEXT NOT NULL,
+    timestamp INTEGER NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Bảng danh bạ

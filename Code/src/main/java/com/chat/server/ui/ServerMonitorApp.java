@@ -117,7 +117,7 @@ public class ServerMonitorApp extends Application {
         root.setPadding(new Insets(14));
 
         stage.setScene(new Scene(root, 960, 520));
-        stage.setTitle("Server Live Monitor Dashboard (TV1)");
+        stage.setTitle("Server Live Monitor Dashboard");
         stage.show();
     }
 
