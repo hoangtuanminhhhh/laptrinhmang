@@ -59,8 +59,8 @@
 
 ## 5. Bảng phân công thành viên, test case nhóm
 
-https://docs.google.com/spreadsheets/d/1TjxjPc3fDuEKGZbD5TwTIdteOx1nKgsdwFgd8YFjZPk/edit?gid=667579612#gid=667579612 (File test case)
-
+- File test case: https://docs.google.com/spreadsheets/d/1TjxjPc3fDuEKGZbD5TwTIdteOx1nKgsdwFgd8YFjZPk/edit?gid=667579612#gid=667579612
+- File phân công: https://docs.google.com/spreadsheets/d/1MAUILcxiuwA5_wpdFKRwJm3Av1hW3_hBupYTqvFZI5o/edit?usp=sharing
 ## 6. Kiến trúc hệ thống & Giao thức
 
 ### 6.1. Mô hình tổng thể
